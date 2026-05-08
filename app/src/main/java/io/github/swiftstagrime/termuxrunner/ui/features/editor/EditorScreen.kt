@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
@@ -17,6 +18,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,6 +62,16 @@ fun EditorScreen(
     onRequestBatteryUnrestricted: () -> Unit,
     onHeartbeatToggle: (Boolean) -> Unit,
     onProcessImage: suspend (Uri) -> String?,
+    currentPageIndex: Int = 0,
+    pageNames: List<String> = emptyList(),
+    onPageSelected: (Int) -> Unit = {},
+    onAddPage: () -> Unit = {},
+    onDeletePage: (Int) -> Unit = {},
+    onRenamePage: (Int, String) -> Unit = { _, _ -> },
+    onReorderPage: (Int, Int) -> Unit = { _, _ -> },
+    pageToDeleteIndex: Int? = null,
+    onConfirmDeletePage: () -> Unit = {},
+    onDismissDeletePage: () -> Unit = {},
 ) {
     var showConfigDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -119,14 +131,29 @@ fun EditorScreen(
             shape = RoundedCornerShape(32.dp),
             shadowElevation = 1.dp,
         ) {
-            CodeEditor(
-                code = codeState,
-                onCodeChange = onCodeChange,
-                interpreter = scriptDraft.interpreter,
-                modifier =
-                    Modifier
-                        .fillMaxSize(),
-            )
+            Column(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                CodePageTabs(
+                    pageCount = scriptDraft.codePages.size,
+                    pageNames = pageNames,
+                    currentPageIndex = currentPageIndex,
+                    onPageSelected = onPageSelected,
+                    onAddPage = onAddPage,
+                    onDeletePage = onDeletePage,
+                    onRenamePage = onRenamePage,
+                    onReorderPage = onReorderPage,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+                CodeEditor(
+                    code = codeState,
+                    onCodeChange = onCodeChange,
+                    interpreter = scriptDraft.interpreter,
+                    modifier =
+                        Modifier
+                            .fillMaxSize(),
+                )
+            }
         }
 
         if (showConfigDialog) {
@@ -152,6 +179,26 @@ fun EditorScreen(
                 onAddNewCategory = onAddNewCategory,
             )
         }
+
+        pageToDeleteIndex?.let { index ->
+            AlertDialog(
+                onDismissRequest = onDismissDeletePage,
+                title = { Text(stringResource(R.string.cd_delete_page)) },
+                text = { Text(stringResource(R.string.cd_confirm_delete_page)) },
+                confirmButton = {
+                    TextButton(onClick = onConfirmDeletePage) {
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onDismissDeletePage) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(28.dp),
+            )
+        }
     }
 }
 
@@ -173,7 +220,8 @@ fun PreviewEditorNewRaw() {
                 Script(
                     id = 1,
                     name = "Complex Logic",
-                    code = sampleCode,
+                    codePages = listOf(sampleCode, "# Page 2\necho second"),
+                    pageNames = listOf("Main", "Helper"),
                 ),
             codeState = TextFieldValue(sampleCode),
             onCodeChange = {},
@@ -191,6 +239,12 @@ fun PreviewEditorNewRaw() {
             configState = null,
             onOpenConfig = {},
             onDismissConfig = {},
+            currentPageIndex = 0,
+            pageNames = listOf("Main", "Helper"),
+            onPageSelected = {},
+            onAddPage = {},
+            onDeletePage = {},
+            onRenamePage = { _, _ -> },
         )
     }
 }

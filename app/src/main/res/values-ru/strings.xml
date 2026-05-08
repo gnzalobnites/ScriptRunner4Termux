@@ -108,6 +108,15 @@
     <string name="editor_untitled">Без названия</string>
     <string name="editor_placeholder"># Начните кодить…</string>
     <string name="editor_search_placeholder">Найти…</string>
+    <string name="cd_add_page">Добавить страницу</string>
+    <string name="cd_delete_page">Удалить страницу</string>
+    <string name="cd_page">Страница</string>
+    <string name="cd_confirm_delete_page">Удалить эту страницу?</string>
+    <string name="cd_page_count">Страница %1$d из %2$d</string>
+    <string name="cd_rename_page">Переименовать</string>
+    <string name="cd_page_name">Имя страницы</string>
+    <string name="cd_ok">OK</string>
+    <string name="cd_default_page_name">Страница %1$d</string>
     <string name="cd_undo">Отменить</string>
     <string name="cd_redo">Вернуть</string>
     <string name="cd_comment">Закомментировать</string>

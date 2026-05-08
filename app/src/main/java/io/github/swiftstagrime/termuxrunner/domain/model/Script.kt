@@ -14,7 +14,8 @@ enum class InteractionMode : Parcelable {
 data class Script(
     val id: Int = 0,
     val name: String,
-    val code: String,
+    val codePages: List<String>,
+    val pageNames: List<String> = emptyList(),
     val interpreter: String = "bash",
     val fileExtension: String = "sh",
     val commandPrefix: String = "",
@@ -35,4 +36,63 @@ data class Script(
     val prefixPresets: List<String> = emptyList(),
     val envVarPresets: List<String> = emptyList(),
     val adbCode: String? = null,
-) : Parcelable
+) : Parcelable {
+    /**
+     * Computed property that concatenates all code pages into a single string,
+     * separated by newlines. This is used when sending the script to Termux.
+     */
+    val code: String
+        get() = codePages.joinToString("\n")
+
+    companion object {
+        fun fromCode(
+            code: String,
+            name: String = "",
+            id: Int = 0,
+            interpreter: String = "bash",
+            fileExtension: String = "sh",
+            commandPrefix: String = "",
+            executionParams: String = "",
+            envVars: Map<String, String> = emptyMap(),
+            iconPath: String? = null,
+            runInBackground: Boolean = false,
+            openNewSession: Boolean = true,
+            keepSessionOpen: Boolean = true,
+            useHeartbeat: Boolean = false,
+            heartbeatTimeout: Long = 30000,
+            heartbeatInterval: Long = 10000,
+            categoryId: Int? = null,
+            orderIndex: Int = 0,
+            notifyOnResult: Boolean = false,
+            interactionMode: InteractionMode = InteractionMode.NONE,
+            argumentPresets: List<String> = emptyList(),
+            prefixPresets: List<String> = emptyList(),
+            envVarPresets: List<String> = emptyList(),
+            adbCode: String? = null,
+        ): Script = Script(
+            id = id,
+            name = name,
+            codePages = listOf(code),
+            interpreter = interpreter,
+            fileExtension = fileExtension,
+            commandPrefix = commandPrefix,
+            executionParams = executionParams,
+            envVars = envVars,
+            iconPath = iconPath,
+            runInBackground = runInBackground,
+            openNewSession = openNewSession,
+            keepSessionOpen = keepSessionOpen,
+            useHeartbeat = useHeartbeat,
+            heartbeatTimeout = heartbeatTimeout,
+            heartbeatInterval = heartbeatInterval,
+            categoryId = categoryId,
+            orderIndex = orderIndex,
+            notifyOnResult = notifyOnResult,
+            interactionMode = interactionMode,
+            argumentPresets = argumentPresets,
+            prefixPresets = prefixPresets,
+            envVarPresets = envVarPresets,
+            adbCode = adbCode,
+        )
+    }
+}

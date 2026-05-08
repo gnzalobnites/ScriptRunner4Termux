@@ -109,6 +109,15 @@
     <string name="editor_untitled">Sans titre</string>
     <string name="editor_placeholder"># Commencez à coder…</string>
     <string name="editor_search_placeholder">Trouver…</string>
+    <string name="cd_add_page">Ajouter une page</string>
+    <string name="cd_delete_page">Supprimer la page</string>
+    <string name="cd_page">Page</string>
+    <string name="cd_confirm_delete_page">Supprimer cette page ?</string>
+    <string name="cd_page_count">Page %1$d sur %2$d</string>
+    <string name="cd_rename_page">Renommer</string>
+    <string name="cd_page_name">Nom de la page</string>
+    <string name="cd_ok">OK</string>
+    <string name="cd_default_page_name">Page %1$d</string>
     <string name="cd_undo">Annuler</string>
     <string name="cd_redo">Rétablir</string>
     <string name="cd_comment">Commenter</string>

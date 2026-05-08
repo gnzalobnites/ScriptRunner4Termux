@@ -2,6 +2,7 @@ package io.github.swiftstagrime.termuxrunner.ui.features.editor
 
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.TextRange
@@ -68,8 +69,14 @@ class EditorViewModel
         var editingCode by mutableStateOf(TextFieldValue(""))
             private set
 
+        var currentPageIndex by mutableIntStateOf(0)
+            private set
+
         var configState by mutableStateOf<ScriptConfigState?>(null)
             private set
+
+        var pageToDeleteIndex by mutableStateOf<Int?>(null)
+            internal set
 
         fun loadScript(id: Int) {
             if (id == 0) {
@@ -77,7 +84,8 @@ class EditorViewModel
                     Script(
                         id = 0,
                         name = "",
-                        code = "#!/bin/bash\n\n",
+                        codePages = listOf("#!/bin/bash\n\n"),
+                        pageNames = listOf(""),
                         interpreter = "bash",
                     )
                 return
@@ -87,7 +95,15 @@ class EditorViewModel
                 try {
                     val script = scriptRepository.getScriptById(id)
                     if (script != null) {
-                        _currentScript.value = script
+                        val finalScript =
+                            if (script.pageNames.size != script.codePages.size) {
+                                val defaultNames =
+                                    List(script.codePages.size) { "" }
+                                script.copy(pageNames = defaultNames)
+                            } else {
+                                script
+                            }
+                        _currentScript.value = finalScript
                         editingCode =
                             TextFieldValue(
                                 text = script.code,
@@ -113,7 +129,10 @@ class EditorViewModel
         fun saveScript(script: Script) {
             viewModelScope.launch(ioDispatcher) {
                 try {
-                    updateScriptUseCase(script)
+                    val scriptToSave = _currentScript.value?.let { current ->
+                        script.copy(codePages = current.codePages)
+                    } ?: script
+                    updateScriptUseCase(scriptToSave)
 
                     try {
                         widgetManager.updateScriptsWidget()
@@ -142,6 +161,95 @@ class EditorViewModel
         fun addCategory(name: String) {
             viewModelScope.launch(ioDispatcher) {
                 categoryRepository.upsertCategory(Category(name = name))
+            }
+        }
+
+        fun switchPage(index: Int) {
+            val script = _currentScript.value ?: return
+            if (index < 0 || index >= script.codePages.size) return
+            currentPageIndex = index
+            editingCode = TextFieldValue(
+                text = script.codePages[index],
+            )
+        }
+
+        fun addPage() {
+            val script = _currentScript.value ?: return
+            val newPages = script.codePages.toMutableList()
+            newPages.add("# New page\n")
+            val newNames = script.pageNames.toMutableList()
+            newNames.add("")
+            _currentScript.value = script.copy(codePages = newPages, pageNames = newNames)
+            switchPage(newPages.size - 1)
+        }
+
+        fun renamePage(index: Int, name: String) {
+            val script = _currentScript.value ?: return
+            val newNames = script.pageNames.toMutableList()
+            if (index in newNames.indices) {
+                newNames[index] = name
+                _currentScript.value = script.copy(pageNames = newNames)
+            }
+        }
+
+        fun reorderPage(fromIndex: Int, toIndex: Int) {
+            val script = _currentScript.value ?: return
+            if (fromIndex == toIndex) return
+            if (fromIndex !in script.codePages.indices || toIndex !in script.codePages.indices) return
+            val newPages = script.codePages.toMutableList()
+            val newNames = script.pageNames.toMutableList()
+            val movedPage = newPages.removeAt(fromIndex)
+            val movedName = if (fromIndex in newNames.indices) newNames.removeAt(fromIndex) else ""
+            newPages.add(toIndex, movedPage)
+            newNames.add(toIndex.coerceIn(0, newNames.size), movedName)
+            _currentScript.value = script.copy(codePages = newPages, pageNames = newNames)
+            when (currentPageIndex) {
+                fromIndex -> {
+                    currentPageIndex = toIndex
+                }
+                in (fromIndex + 1)..toIndex -> {
+                    currentPageIndex -= 1
+                }
+                in toIndex..<fromIndex -> {
+                    currentPageIndex += 1
+                }
+            }
+        }
+
+        fun showDeletePageDialog(index: Int) {
+            pageToDeleteIndex = index
+        }
+
+        fun confirmDeletePage() {
+            val index = pageToDeleteIndex ?: return
+            pageToDeleteIndex = null
+            val script = _currentScript.value ?: return
+            if (script.codePages.size <= 1) return
+            val newPages = script.codePages.toMutableList()
+            newPages.removeAt(index)
+            val newNames = script.pageNames.toMutableList()
+            if (index in newNames.indices) {
+                newNames.removeAt(index)
+            }
+            _currentScript.value = script.copy(codePages = newPages, pageNames = newNames)
+            val targetIndex = when {
+                index < currentPageIndex -> currentPageIndex - 1
+                currentPageIndex >= newPages.size -> newPages.size - 1
+                else -> currentPageIndex
+            }
+            switchPage(targetIndex)
+        }
+
+        fun dismissDeletePageDialog() {
+            pageToDeleteIndex = null
+        }
+
+        fun updateCurrentPageCode(code: String) {
+            val script = _currentScript.value ?: return
+            val newPages = script.codePages.toMutableList()
+            if (currentPageIndex in newPages.indices) {
+                newPages[currentPageIndex] = code
+                _currentScript.value = script.copy(codePages = newPages)
             }
         }
 

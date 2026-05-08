@@ -109,6 +109,15 @@
     <string name="editor_untitled">无标题</string>
     <string name="editor_placeholder"># 开始编写代码…</string>
     <string name="editor_search_placeholder">查找…</string>
+    <string name="cd_add_page">添加页面</string>
+    <string name="cd_delete_page">删除页面</string>
+    <string name="cd_page">页面</string>
+    <string name="cd_confirm_delete_page">删除此页面？</string>
+    <string name="cd_page_count">第 %1$d 页，共 %2$d 页</string>
+    <string name="cd_rename_page">重命名</string>
+    <string name="cd_page_name">页面名称</string>
+    <string name="cd_ok">确定</string>
+    <string name="cd_default_page_name">页面 %1$d</string>
     <string name="cd_undo">撤销</string>
     <string name="cd_redo">重做</string>
     <string name="cd_comment">注释</string>

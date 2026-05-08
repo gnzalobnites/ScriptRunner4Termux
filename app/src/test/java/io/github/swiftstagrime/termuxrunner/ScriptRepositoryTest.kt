@@ -256,7 +256,7 @@ class ScriptRepositoryImplTest {
                 ScriptEntity(
                     id = 1,
                     name = "FullFeature",
-                    code = "exit 0",
+                    codePages = listOf("exit 0"),
                     interpreter = "python",
                     fileExtension = "py",
                     commandPrefix = "python3",
@@ -425,7 +425,7 @@ class ScriptRepositoryImplTest {
 
             val entity = capturedScript.captured
             assertEquals("CheckFields", entity.name)
-            assertEquals("uptime", entity.code)
+            assertEquals(listOf("uptime"), entity.codePages)
             assertEquals("tsu", entity.commandPrefix)
             assertTrue(entity.runInBackground)
             assertFalse(entity.openNewSession)
@@ -565,7 +565,7 @@ class ScriptRepositoryImplTest {
         runTest {
             val script = ScriptEntity(
                 name = "ExportTest",
-                code = "pwd",
+                codePages = listOf("pwd"),
                 interpreter = "sh",
                 envVars = emptyMap(),
                 runInBackground = false,

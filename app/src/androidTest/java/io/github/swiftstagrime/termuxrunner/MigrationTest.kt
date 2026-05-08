@@ -186,4 +186,63 @@ class MigrationTest {
 
         cursor.close()
     }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate6To7_renamesCodeColumnToCodePagesAndWrapsInJsonArray() {
+        var db =
+            helper.createDatabase(TEST_DB, 6).apply {
+                execSQL(
+                    """
+                    INSERT INTO scripts (id, name, code, interpreter, fileExtension, commandPrefix,
+                    runInBackground, openNewSession, executionParams, envVars, keepSessionOpen,
+                    useHeartbeat, heartbeatTimeout, heartbeatInterval, categoryId, orderIndex,
+                    notifyOnResult, interactionMode, argumentPresets, prefixPresets, envVarPresets, adbCode)
+                    VALUES (1, 'Test Script', 'echo "hello world"', 'bash', '.sh', '', 0, 1, '', '{}', 0,
+                    0, 30000, 10000, null, 0, 0, 'NONE', '', '', '', null)
+                    """.trimIndent(),
+                )
+                execSQL(
+                    """
+                    INSERT INTO scripts (id, name, code, interpreter, fileExtension, commandPrefix,
+                    runInBackground, openNewSession, executionParams, envVars, keepSessionOpen,
+                    useHeartbeat, heartbeatTimeout, heartbeatInterval, categoryId, orderIndex,
+                    notifyOnResult, interactionMode, argumentPresets, prefixPresets, envVarPresets, adbCode)
+                    VALUES (2, 'Script with "quotes"', 'ls -la', 'sh', '.sh', '', 0, 0, '', '{}', 0,
+                    0, 30000, 10000, null, 0, 0, 'NONE', '', '', '', null)
+                    """.trimIndent(),
+                )
+                close()
+            }
+
+        db = helper.runMigrationsAndValidate(TEST_DB, 7, true)
+
+        val codePagesCheck = db.query("SELECT codePages FROM scripts LIMIT 1")
+        assertTrue("codePages column should exist", codePagesCheck.getColumnIndexOrThrow("codePages") >= 0)
+        codePagesCheck.close()
+
+        val cursor = db.query("SELECT * FROM scripts WHERE id = 1")
+        assertTrue(cursor.moveToFirst())
+
+        val codePagesIndex = cursor.getColumnIndexOrThrow("codePages")
+        val codePages = cursor.getString(codePagesIndex)
+        assertTrue("codePages should be JSON array", codePages.startsWith("["))
+        assertTrue("codePages should contain original code", codePages.contains("echo \"hello world\""))
+
+        val cursor2 = db.query("SELECT * FROM scripts WHERE id = 2")
+        assertTrue(cursor2.moveToFirst())
+        val codePages2 = cursor2.getString(cursor2.getColumnIndexOrThrow("codePages"))
+        assertTrue("codePages should be JSON array", codePages2.startsWith("["))
+        assertTrue("codePages should contain original code", codePages2.contains("ls -la"))
+
+        assertEquals("Test Script", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+        assertEquals("bash", cursor.getString(cursor.getColumnIndexOrThrow("interpreter")))
+
+        val pageNamesIndex = cursor.getColumnIndexOrThrow("page_names")
+        val pageNames = cursor.getString(pageNamesIndex)
+        assertEquals("page_names should be empty for migrated scripts", "", pageNames)
+
+        cursor.close()
+        cursor2.close()
+    }
 }

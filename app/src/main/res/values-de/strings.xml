@@ -110,6 +110,15 @@
     <string name="editor_untitled">Unbenannt</string>
     <string name="editor_placeholder"># Code eingeben…</string>
     <string name="editor_search_placeholder">Finden…</string>
+    <string name="cd_add_page">Seite hinzufügen</string>
+    <string name="cd_delete_page">Seite löschen</string>
+    <string name="cd_page">Seite</string>
+    <string name="cd_confirm_delete_page">Diese Seite löschen?</string>
+    <string name="cd_page_count">Seite %1$d von %2$d</string>
+    <string name="cd_rename_page">Umbenennen</string>
+    <string name="cd_page_name">Seitenname</string>
+    <string name="cd_ok">OK</string>
+    <string name="cd_default_page_name">Seite %1$d</string>
     <string name="cd_undo">Rückgängig</string>
     <string name="cd_redo">Wiederholen</string>
     <string name="cd_comment">Kommentieren</string>

@@ -185,7 +185,7 @@ class ScriptRepositoryImpl
                     val newScript =
                         Script(
                             name = fileName.substringBeforeLast('.'),
-                            code = finalCode,
+                            codePages = listOf(finalCode),
                             interpreter = detectedInterpreter,
                             fileExtension = extension,
                             runInBackground = false,

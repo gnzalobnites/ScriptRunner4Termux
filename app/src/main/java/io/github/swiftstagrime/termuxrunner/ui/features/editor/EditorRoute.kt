@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,11 +52,14 @@ fun EditorRoute(
         mutableStateOf(script)
     }
 
+    val currentPageIndex = viewModel.currentPageIndex
+    scriptDraft?.codePages ?: emptyList()
+
     var codeState by rememberSaveable(script?.id, stateSaver = TextFieldValueSaver) {
         mutableStateOf(
             TextFieldValue(
-                text = script?.code ?: "",
-                selection = TextRange(script?.code?.length ?: 0),
+                text = script?.codePages?.getOrNull(0) ?: "",
+                selection = TextRange(script?.codePages?.getOrNull(0)?.length ?: 0),
             ),
         )
     }
@@ -97,10 +101,35 @@ fun EditorRoute(
             }
         }
 
+    var previousPageIndex by rememberSaveable { mutableIntStateOf(-1) }
+    var previousPageCount by rememberSaveable { mutableIntStateOf(0) }
+
     LaunchedEffect(script) {
         if (scriptDraft == null && script != null) {
             scriptDraft = script
-            codeState = TextFieldValue(script!!.code, TextRange(script!!.code.length))
+            val pageCode = script!!.codePages.getOrNull(0) ?: ""
+            codeState = TextFieldValue(pageCode, TextRange(pageCode.length))
+            previousPageIndex = 0
+            previousPageCount = script!!.codePages.size
+        }
+    }
+
+    LaunchedEffect(script) {
+        script?.let { newScript ->
+            if (scriptDraft != null) {
+                scriptDraft = newScript
+                previousPageCount = newScript.codePages.size
+            }
+        }
+    }
+
+    LaunchedEffect(currentPageIndex) {
+        if (currentPageIndex != previousPageIndex) {
+            scriptDraft?.let { draft ->
+                val pageCode = draft.codePages.getOrNull(currentPageIndex) ?: ""
+                codeState = TextFieldValue(pageCode)
+                previousPageIndex = currentPageIndex
+            }
         }
     }
 
@@ -139,10 +168,16 @@ fun EditorRoute(
         EditorScreen(
             scriptDraft = scriptDraft!!,
             configState = viewModel.configState,
-            onOpenConfig = { viewModel.openConfig(scriptDraft!!.copy(code = codeState.text)) },
+            onOpenConfig = {
+                viewModel.updateCurrentPageCode(codeState.text)
+                viewModel.openConfig(scriptDraft!!)
+            },
             onDismissConfig = viewModel::dismissConfig,
             codeState = codeState,
-            onCodeChange = { codeState = it },
+            onCodeChange = {
+                codeState = it
+                viewModel.updateCurrentPageCode(it.text)
+            },
             onMetadataChange = { scriptDraft = it },
             categories = categories,
             onBack = onBack,
@@ -154,6 +189,16 @@ fun EditorRoute(
             isBatteryUnrestricted = isBatteryUnrestricted,
             onRequestBatteryUnrestricted = { BatteryUtils.requestIgnoreBatteryOptimizations(context) },
             onRequestNotificationPermission = { requestNotifications() },
+            currentPageIndex = currentPageIndex,
+            pageNames = scriptDraft!!.pageNames,
+            onPageSelected = viewModel::switchPage,
+            onAddPage = viewModel::addPage,
+            onDeletePage = viewModel::showDeletePageDialog,
+            onRenamePage = viewModel::renamePage,
+            onReorderPage = viewModel::reorderPage,
+            pageToDeleteIndex = viewModel.pageToDeleteIndex,
+            onConfirmDeletePage = viewModel::confirmDeletePage,
+            onDismissDeletePage = viewModel::dismissDeletePageDialog,
         )
     }
 }

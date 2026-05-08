@@ -9,7 +9,8 @@ import kotlinx.serialization.Serializable
 data class ScriptExportDto(
     val id: Int = 0,
     val name: String,
-    val code: String,
+    val codePages: List<String>,
+    val pageNames: List<String> = emptyList(),
     val categoryId: Int? = null,
     val interpreter: String = "",
     val fileExtension: String = "",
@@ -36,7 +37,8 @@ fun Script.toExportDto(base64Icon: String?): ScriptExportDto =
     ScriptExportDto(
         id = id,
         name = name,
-        code = code,
+        codePages = codePages,
+        pageNames = pageNames,
         categoryId = categoryId,
         interpreter = interpreter,
         fileExtension = fileExtension,
@@ -65,7 +67,8 @@ fun ScriptExportDto.toEntity(
 ): ScriptEntity =
     ScriptEntity(
         name = name,
-        code = code,
+        codePages = codePages,
+        pageNames = pageNames,
         interactionMode = interactionMode,
         interpreter = interpreter,
         fileExtension = fileExtension,

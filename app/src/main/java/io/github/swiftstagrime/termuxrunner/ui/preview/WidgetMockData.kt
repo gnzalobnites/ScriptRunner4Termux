@@ -8,9 +8,9 @@ import io.github.swiftstagrime.termuxrunner.domain.model.Script
 object WidgetMockData {
     val scripts =
         listOf(
-            Script(id = 1, name = "Daily Backup", code = "tar -czf backup.tar.gz /data"),
-            Script(id = 2, name = "Server Check", code = "curl -I https://google.com"),
-            Script(id = 3, name = "Clean Temp", code = "rm -rf /tmp/*"),
+            Script(id = 1, name = "Daily Backup", codePages = listOf("tar -czf backup.tar.gz /data")),
+            Script(id = 2, name = "Server Check", codePages = listOf("curl -I https://google.com")),
+            Script(id = 3, name = "Clean Temp", codePages = listOf("rm -rf /tmp/*")),
         )
 
     val automations =

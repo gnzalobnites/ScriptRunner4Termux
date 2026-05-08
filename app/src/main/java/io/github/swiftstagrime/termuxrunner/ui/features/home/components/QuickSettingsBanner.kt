@@ -252,10 +252,10 @@ fun TileCircleItem(
 fun QuickSettingsBannerPreview() {
     val mockScripts =
         mapOf(
-            1 to Script(id = 1, name = "Update System", code = ""),
-            2 to Script(id = 2, name = "Clean Logs", code = ""),
+            1 to Script(id = 1, name = "Update System", codePages = listOf("")),
+            2 to Script(id = 2, name = "Clean Logs", codePages = listOf("")),
             3 to null,
-            4 to Script(id = 4, name = "Start Web", code = ""),
+            4 to Script(id = 4, name = "Start Web", codePages = listOf("")),
             5 to null,
         )
 
