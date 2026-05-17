@@ -129,17 +129,58 @@ class RunScriptUseCaseTest {
         }
 
     @Test
-    fun `heartbeat wrapper is added when enabled`() =
+    fun `TCP wrapper is added when port available`() =
         runTest {
             val script =
                 Script(
                     id = 5,
-                    name = "HeartbeatTest",
+                    name = "TcpTest",
                     codePages = listOf("sleep 10"),
                     useHeartbeat = true,
                     heartbeatInterval = 5000L,
                 )
             every { monitorRepo.hasNotificationPermission() } returns true
+            every { monitorRepo.startMonitoring(script) } returns 8765
+
+            useCase(script)
+
+            val commandSlot = slot<String>()
+            verify {
+                termuxRepo.runCommand(
+                    command = capture(commandSlot),
+                    runInBackground = any(),
+                    sessionAction = any(),
+                    scriptId = any(),
+                    scriptName = any(),
+                    notifyOnResult = any(),
+                    automationId = any(),
+                )
+            }
+
+            val command = commandSlot.captured
+
+            assertTrue(command.contains("socket.AF_INET"))
+            assertTrue(command.contains("127.0.0.1"))
+            assertTrue(command.contains("8765"))
+            assertTrue(command.contains("EXIT_OK"))
+            assertTrue(command.contains("python3"))
+
+            verify { monitorRepo.startMonitoring(script) }
+        }
+
+    @Test
+    fun `broadcast heartbeat wrapper used as fallback when port is null`() =
+        runTest {
+            val script =
+                Script(
+                    id = 6,
+                    name = "HeartbeatFallback",
+                    codePages = listOf("sleep 10"),
+                    useHeartbeat = true,
+                    heartbeatInterval = 5000L,
+                )
+            every { monitorRepo.hasNotificationPermission() } returns true
+            every { monitorRepo.startMonitoring(script) } returns null
 
             useCase(script)
 
@@ -160,7 +201,6 @@ class RunScriptUseCaseTest {
 
             assertTrue(command.contains("am broadcast -a $testPackageName.HEARTBEAT"))
             assertTrue(command.contains("am broadcast -a $testPackageName.SCRIPT_FINISHED"))
-
             assertTrue(command.contains("HEARTBEAT_PID=$!"))
             assertTrue(command.contains("trap cleanup_heartbeat EXIT"))
 

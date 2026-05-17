@@ -86,9 +86,25 @@ class RunScriptUseCase
                     )
                 }
 
-            // Execute in Termux
+            val port: Int? =
+                if (script.useHeartbeat && monitoringRepository.hasNotificationPermission()) {
+                    monitoringRepository.startMonitoring(script)
+                } else {
+                    null
+                }
+
+            val wrappedCommand =
+                if (port != null) {
+                    wrapCommandWithTcpMonitor(finalCommand, port)
+                } else if (script.useHeartbeat) {
+                    wrapCommandWithHeartbeat(finalCommand, script.heartbeatInterval, script.id)
+                } else {
+                    finalCommand
+                }
+
+            // Execute in Termux with wrapped command
             termuxRepository.runCommand(
-                command = finalCommand,
+                command = wrappedCommand,
                 runInBackground = script.runInBackground,
                 sessionAction = "1",
                 scriptId = script.id,
@@ -96,11 +112,45 @@ class RunScriptUseCase
                 notifyOnResult = script.notifyOnResult,
                 automationId = automationId,
             )
+        }
 
-            // Manage Heartbeat Service
-            if (script.useHeartbeat && monitoringRepository.hasNotificationPermission()) {
-                monitoringRepository.startMonitoring(script)
-            }
+        private fun wrapCommandWithTcpMonitor(
+            commandToRun: String,
+            port: Int,
+        ): String {
+            // TCP wrapper using Python to hold a connection open.
+            // Python connects to the Android app's TCP server and waits for stdin to close.
+            // When the script finishes normally, we close the pipe (fd 3),
+            // which causes Python's sys.stdin.read() to return, sending "EXIT_OK".
+            // If the process is killed (SIGKILL/OOM), the TCP connection drops without EXIT_OK.
+            val dollar = "$"
+            return """
+    (
+      # Create a pipe for signaling script completion to Python
+      exec 3< <(sleep infinity)
+
+      # Python TCP holder - connects to Android app and waits for fd 3 to close
+      python3 -c "
+import socket, sys
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(('127.0.0.1', $port))
+    sys.stdin.read()  # Wait for pipe to close
+    s.sendall(b'EXIT_OK\\n')
+    s.close()
+except:
+    pass
+" <&3 &
+      PYTHON_PID=${dollar}!
+
+      # Run the actual script
+      ( $commandToRun )
+
+      # Close fd 3 to signal Python that we finished normally
+      exec 3>&-
+      wait ${dollar}PYTHON_PID 2>/dev/null
+    )
+                """.trimIndent()
         }
 
         private fun prepareSmallScriptCommand(
@@ -124,21 +174,13 @@ class RunScriptUseCase
                         append(combinedArgs)
                     }.toString()
 
-            // Wrap with heartbeat if enabled
-            val runBlock =
-                if (script.useHeartbeat) {
-                    wrapCommandWithHeartbeat(coreExecution, script.heartbeatInterval, script.id)
-                } else {
-                    coreExecution
-                }
-
             return StringBuilder()
                 .append("mkdir -p $tempDir && ")
                 .append("echo '$encodedCode' | base64 -d > $fullPath && ")
                 .append("chmod +x $fullPath && ")
                 .append("bash -c \"")
                 .append("trap 'rm -f $fullPath' EXIT; ")
-                .append(runBlock.replace("\"", "\\\""))
+                .append(coreExecution.replace("\"", "\\\""))
                 .append("\"")
                 .apply {
                     if (script.keepSessionOpen) {
@@ -172,14 +214,6 @@ class RunScriptUseCase
                         append(combinedArgs)
                     }.toString()
 
-            // Wrap with heartbeat if enabled
-            val runBlock =
-                if (script.useHeartbeat) {
-                    wrapCommandWithHeartbeat(coreExecution, script.heartbeatInterval, script.id)
-                } else {
-                    "($coreExecution)"
-                }
-
             return StringBuilder()
                 .append("mkdir -p ~/scriptrunner_for_termux && ")
                 .append("cp -f $termuxSourcePath $termuxDestPath && ")
@@ -187,7 +221,7 @@ class RunScriptUseCase
                 .append("chmod +x $termuxDestPath && ")
                 .append("bash -c \"")
                 .append("trap 'rm -f $termuxDestPath' EXIT; ")
-                .append(runBlock.replace("\"", "\\\""))
+                .append(coreExecution.replace("\"", "\\\""))
                 .append("\"")
                 .apply {
                     if (script.keepSessionOpen) {

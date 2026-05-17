@@ -175,7 +175,7 @@
     <string name="pulse_interval_s">Pulse Interval (s)</string>
     <string name="timeout_limit_s">Timeout Limit (s)</string>
     <string name="pulse_how_often_the_script_signals_it_is_alive_timeout_restart_if_no_signal_received_after_this_time">Pulse: How often the script signals it is alive.\nTimeout: Restart if no signal received after this time.</string>
-    <string name="experimental_warning">Warning! Experimental - may break the script or waste battery and CPU.</string>
+    <string name="experimental_warning">With python installed runs as socket monitor. Without python defaults to Lazarus mode and wastes battery - Install python for better experience.</string>
     <string name="btn_add_variable">Add Variable</string>
     <string name="open_termux_settings">Open Termux Settings</string>
     <string name="finish_setup_label">I have finished setup</string>
@@ -303,8 +303,7 @@
     <string name="notif_finished_success">Finished successfully</string>
     <string name="notif_finished_error">Finished with error (Code: %1$d)</string>
     <string name="notif_restart_count"> • Restarts: %1$d</string>
-    <string name="notif_details_format">Status: %1$s%2$s\nUptime: %3$dm • Last Pulse: %4$ds ago</string>
-    <string name="notif_monitoring_title">Monitoring: %1$s</string>
+    <string name="notif_details_format">Status: %1$s %2$s\nUptime: %3$d m • Last Pulse: %4$d s ago</string>    <string name="notif_monitoring_title">Monitoring: %1$s</string>
     <string name="notif_stop_monitoring">Stop Monitoring</string>
     <string name="channel_monitor_name">Script Monitor</string>
     <string name="channel_monitor_desc">Shows status of scripts running with crash protection</string>

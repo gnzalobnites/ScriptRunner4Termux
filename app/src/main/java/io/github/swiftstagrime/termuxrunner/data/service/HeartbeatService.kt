@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -28,10 +29,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * A foreground service that monitors a running script for crashes.
- * It expects a "heartbeat" broadcast from the script to know it's alive.
- * If the heartbeat is not received within a timeout period, it attempts to restart the script.
- * Also runs as a separate process to minimize ram usage, and thus risk of being killed
+ * A foreground service that monitors running scripts for crashes.
+ *
+ * Supports two monitoring modes:
+ * 1. **TCP Monitoring** (primary): Uses [TcpMonitor] instances per script for event-driven
+ *    monitoring with zero CPU usage while waiting.
+ * 2. **Broadcast Monitoring** (fallback): Uses heartbeat broadcasts with periodic health checks
+ *    for scripts running without python3 in Termux.
+ *
+ * Runs as a separate process to minimize RAM usage and risk of being killed.
  */
 @AndroidEntryPoint
 class HeartbeatService : Service() {
@@ -45,11 +51,14 @@ class HeartbeatService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var isServiceRunning = false
     private val monitoredScripts = mutableMapOf<Int, ScriptMonitorState>()
+    private val tcpMonitors = mutableMapOf<Int, TcpMonitor>()
+    private val scriptPorts = mutableMapOf<Int, Int>()
     private val actionHeartbeat by lazy { "$packageName.HEARTBEAT" }
     private val actionFinished by lazy { "$packageName.SCRIPT_FINISHED" }
+    private val binder = ScriptPortBinder()
 
     /**
-     * Listens for heartbeat signals and finish signals.
+     * Listens for heartbeat signals and finish signals from broadcast-based monitoring.
      * Expects 'script_id' extra in the broadcast to identify the script.
      */
     private val heartbeatReceiver =
@@ -108,7 +117,7 @@ class HeartbeatService : Service() {
     ): Int {
         if (intent == null) {
             // Service restarted by system. If we have no data, stop.
-            if (monitoredScripts.isEmpty()) stopSelf()
+            if (monitoredScripts.isEmpty() && tcpMonitors.isEmpty()) stopSelf()
             return START_STICKY
         }
 
@@ -119,27 +128,15 @@ class HeartbeatService : Service() {
                 val timeout = intent.getLongExtra(EXTRA_TIMEOUT_MS, DEFAULT_TIMEOUT_MS)
 
                 if (id != -1) {
-                    val newState =
-                        ScriptMonitorState(
-                            id = id,
-                            name = name,
-                            timeoutLimit = timeout,
-                        )
-                    monitoredScripts[id] = newState
-                    startServiceLoopIfNeeded()
-                    updateNotification()
+                    startMonitoringForScript(id, name, timeout)
                 }
             }
 
             ACTION_STOP -> {
                 val id = intent.getIntExtra(EXTRA_SCRIPT_ID, -1)
                 if (id != -1) {
-                    // Stop specific script
-                    monitoredScripts.remove(id)
-                    updateNotification()
-                    if (monitoredScripts.isEmpty()) stopAll()
+                    stopMonitoringForScript(id)
                 } else {
-                    // No ID provided? Stop everything.
                     stopAll()
                 }
             }
@@ -149,13 +146,84 @@ class HeartbeatService : Service() {
         return START_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    /**
+     * Starts TCP or broadcast monitoring for a single script.
+     */
+    private fun startMonitoringForScript(
+        id: Int,
+        name: String,
+        timeout: Long,
+    ) {
+        val newState =
+            ScriptMonitorState(
+                id = id,
+                name = name,
+                timeoutLimit = timeout,
+            )
+        monitoredScripts[id] = newState
+
+        try {
+            val monitor =
+                TcpMonitor(
+                    onScriptFinishedNormally = {
+                        handleTcpScriptFinished(id, normal = true)
+                    },
+                    onScriptKilled = {
+                        handleTcpScriptFinished(id, normal = false)
+                    },
+                )
+
+            val port = monitor.startListening()
+            tcpMonitors[id] = monitor
+            scriptPorts[id] = port
+        } catch (e: Exception) {
+            // TCP monitor failed (e.g., permission denied) - fall back to broadcast monitoring
+            // Script remains in monitoredScripts for notification tracking
+            // but without a TCP port, so RunScriptUseCase will use broadcast heartbeat
+        }
+
+        startServiceLoopIfNeeded()
+        updateNotification()
+    }
+
+    /**
+     * Stops monitoring for a specific script.
+     */
+    private fun stopMonitoringForScript(id: Int) {
+        tcpMonitors.remove(id)?.stop()
+        scriptPorts.remove(id)
+        monitoredScripts.remove(id)
+        updateNotification()
+        if (monitoredScripts.isEmpty()) stopAll()
+    }
+
+    private fun handleTcpScriptFinished(
+        scriptId: Int,
+        normal: Boolean,
+    ) {
+        tcpMonitors.remove(scriptId)?.stop()
+        scriptPorts.remove(scriptId)
+
+        if (normal) {
+            handleScriptFinished(scriptId, exitCode = 0)
+        } else {
+            val state = monitoredScripts[scriptId] ?: return
+            attemptRestart(state)
+        }
+    }
+
+    override fun onBind(intent: Intent?): IBinder = binder
 
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
         if (wakeLock?.isHeld == true) wakeLock?.release()
         serviceScope.cancel()
+
+        tcpMonitors.values.forEach { it.stop() }
+        tcpMonitors.clear()
+        scriptPorts.clear()
+
         try {
             unregisterReceiver(heartbeatReceiver)
         } catch (_: Exception) {
@@ -163,7 +231,7 @@ class HeartbeatService : Service() {
     }
 
     /**
-     * Starts the monitoring loop.
+     * Starts the monitoring loop for broadcast-based health checks.
      */
     private fun startServiceLoopIfNeeded() {
         if (isServiceRunning) return
@@ -181,7 +249,7 @@ class HeartbeatService : Service() {
     }
 
     /**
-     * Iterates through all monitored scripts to check for timeouts.
+     * Iterates through all monitored scripts to check for timeouts (broadcast mode only).
      */
     private fun checkHealth() {
         val currentTime = System.currentTimeMillis()
@@ -189,6 +257,9 @@ class HeartbeatService : Service() {
         val scriptIds = monitoredScripts.keys.toList()
 
         for (id in scriptIds) {
+            // Skip scripts being monitored via TCP
+            if (tcpMonitors.containsKey(id)) continue
+
             val state = monitoredScripts[id] ?: continue
             val timeSincePulse = currentTime - state.lastHeartbeatTime
 
@@ -202,7 +273,11 @@ class HeartbeatService : Service() {
 
     private fun attemptRestart(state: ScriptMonitorState) {
         state.restartCount++
-        state.status = UiText.StringResource(R.string.notif_status_resurrecting, state.restartCount)
+        state.status = UiText.StringResource(
+            R.string.notif_status_resurrecting,
+            state.restartCount,
+            MAX_RESTARTS,
+        )
         state.lastHeartbeatTime = System.currentTimeMillis()
 
         // Relaunch
@@ -239,47 +314,48 @@ class HeartbeatService : Service() {
     private fun stopAll() {
         isServiceRunning = false
         monitoredScripts.clear()
+
+        tcpMonitors.values.forEach { it.stop() }
+        tcpMonitors.clear()
+        scriptPorts.clear()
+
         if (wakeLock?.isHeld == true) wakeLock?.release()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     /**
-     * intelligently updates the notification based on how many scripts are running.
+     * Updates the notification based on how many scripts are running.
      */
     private fun updateNotification() {
         if (monitoredScripts.isEmpty()) return
 
         if (monitoredScripts.size == 1) {
-            // --- Single Script Mode (Detailed) ---
             val state = monitoredScripts.values.first()
             showSingleScriptNotification(state)
         } else {
-            // --- Multi Script Mode (Summary) ---
             showSummaryNotification()
         }
     }
 
     private fun showSingleScriptNotification(state: ScriptMonitorState) {
-        val uptimeMins = (System.currentTimeMillis() - state.serviceStartTime) / 60_000
-        val secondsSincePulse = (System.currentTimeMillis() - state.lastHeartbeatTime) / 1000
+        val currentTime = System.currentTimeMillis()
+        val uptimeMins = (currentTime - state.serviceStartTime) / 60_000
+        val secondsSincePulse = (currentTime - state.lastHeartbeatTime) / 1000
 
-        val restartText =
-            if (state.restartCount > 0) {
-                UiText.StringResource(R.string.notif_restart_count, state.restartCount).asString(this)
-            } else {
-                ""
-            }
+        val restartText = if (state.restartCount > 0) {
+            UiText.StringResource(R.string.notif_restart_count, state.restartCount).asString(this)
+        } else {
+            ""
+        }
 
-        val contentText =
-            UiText
-                .StringResource(
-                    R.string.notif_details_format,
-                    state.status.asString(this),
-                    restartText,
-                    uptimeMins,
-                    secondsSincePulse,
-                ).asString(this)
+        val contentText = UiText.StringResource(
+            R.string.notif_details_format,
+            state.status.asString(this),
+            restartText,
+            uptimeMins,
+            secondsSincePulse
+        ).asString(this)
 
         buildAndNotify(
             title = UiText.StringResource(R.string.notif_monitoring_title, state.name).asString(this),
@@ -398,6 +474,15 @@ class HeartbeatService : Service() {
         var status: UiText = UiText.StringResource(R.string.notif_status_watching),
     )
 
+    /**
+     * Binder exposed to callers for retrieving TCP ports after starting monitoring.
+     */
+    inner class ScriptPortBinder : Binder() {
+        fun getPort(scriptId: Int): Int? = scriptPorts[scriptId]
+
+        fun getService(): HeartbeatService = this@HeartbeatService
+    }
+
     companion object {
         // Intent actions
         const val ACTION_START = "ACTION_START_MONITORING"
@@ -416,5 +501,6 @@ class HeartbeatService : Service() {
         private const val DEFAULT_TIMEOUT_MS = 30_000L
         private const val CHECK_INTERVAL_MS = 10_000L
         private const val WAKELOCK_TAG = "TermuxRunner:HeartbeatWakeLock"
+        private const val MAX_RESTARTS = 5
     }
 }
