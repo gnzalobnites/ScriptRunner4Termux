@@ -104,7 +104,7 @@ class ScriptRepositoryImpl
         }
 
         val finalBackup = FullBackupDto(
-            version = 4,
+            version = 5,
             categories = catEnt.map { CategoryExportDto(it.id, it.name, it.orderIndex) },
             scripts = scripts,
             automations = others.first.map { it.toAutomationDomain().toExportDto() },
@@ -168,36 +168,33 @@ class ScriptRepositoryImpl
         }
     }
 
-        override suspend fun importSingleScript(uri: Uri): Result<Script> =
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    val content =
-                        context.contentResolver.openInputStream(uri)?.use {
-                            BufferedReader(InputStreamReader(it)).readText()
-                        } ?: throw ImportStreamException()
+    override suspend fun importSingleScript(uri: Uri): Result<Script> =
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val content = context.contentResolver.openInputStream(uri)?.use {
+                    BufferedReader(InputStreamReader(it)).readText()
+                } ?: throw ImportStreamException()
 
-                    val fileName = getFileName(uri) ?: "Imported Script"
-                    val extension = fileName.substringAfterLast('.', "sh")
+                val fileName = getFileName(uri) ?: "Imported Script"
+                val extension = fileName.substringAfterLast('.', "sh")
 
-                    // Logic for interpreter and shebang
-                    val (finalCode, detectedInterpreter) = processScriptContent(content, extension)
+                //Logic for the shebang
+                val (finalCode, detectedInterpreter) = processScriptContent(content, extension)
 
-                    val newScript =
-                        Script(
-                            name = fileName.substringBeforeLast('.'),
-                            codePages = listOf(finalCode),
-                            interpreter = detectedInterpreter,
-                            fileExtension = extension,
-                            runInBackground = false,
-                            openNewSession = false,
-                            keepSessionOpen = false,
-                        )
+                val scriptName = fileName.substringBeforeLast('.')
 
-                    // We return the script object so the UI can decide
-                    // whether to open it in the editor first or save it directly.
-                    newScript
-                }
+                Script(
+                    name = scriptName,
+                    codePages = listOf(finalCode),
+                    pageNames = listOf("Main"),
+                    interpreter = detectedInterpreter,
+                    fileExtension = extension,
+                    runInBackground = false,
+                    openNewSession = false,
+                    keepSessionOpen = false,
+                )
             }
+        }
 
         override suspend fun getScriptByAdbCode(code: String): Result<Script> =
             runCatching {
