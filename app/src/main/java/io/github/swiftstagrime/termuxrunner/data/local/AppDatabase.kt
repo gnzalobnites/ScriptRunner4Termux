@@ -1,5 +1,7 @@
 package io.github.swiftstagrime.termuxrunner.data.local
 
+import android.content.ContentValues
+import android.database.sqlite.SQLiteDatabase
 import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -16,6 +18,7 @@ import io.github.swiftstagrime.termuxrunner.data.local.entity.AutomationLogEntit
 import io.github.swiftstagrime.termuxrunner.data.local.entity.CategoryEntity
 import io.github.swiftstagrime.termuxrunner.data.local.entity.CustomThemeEntity
 import io.github.swiftstagrime.termuxrunner.data.local.entity.ScriptEntity
+import org.json.JSONArray
 
 @Database(
     entities = [ScriptEntity::class, CategoryEntity::class, AutomationEntity::class, AutomationLogEntity::class, CustomThemeEntity::class],
@@ -41,11 +44,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun customThemeDao(): CustomThemeDao
 }
 
-val MIGRATION_6_7: Migration =
-    object : Migration(6, 7) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            database.execSQL(
-                """
+val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
             CREATE TABLE scripts_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -72,32 +73,56 @@ val MIGRATION_6_7: Migration =
                 envVarPresets TEXT NOT NULL DEFAULT '',
                 adbCode TEXT DEFAULT NULL
             )
-        """,
-            )
+        """)
 
-            database.execSQL(
-                """
-            INSERT INTO scripts_new (
-                id, name, codePages, page_names, interpreter, fileExtension, commandPrefix,
-                runInBackground, openNewSession, executionParams, iconPath,
-                envVars, keepSessionOpen, useHeartbeat, heartbeatTimeout,
-                heartbeatInterval, categoryId, orderIndex, notifyOnResult,
-                interactionMode, argumentPresets, prefixPresets, envVarPresets, adbCode
-            )
-            SELECT
-                id, name,
-                '[' || REPLACE(REPLACE(code, '\\', '\\\\'), '"', '\\"') || ']',
-                '',
-                interpreter, fileExtension, commandPrefix,
-                runInBackground, openNewSession, executionParams, iconPath,
-                envVars, keepSessionOpen, useHeartbeat, heartbeatTimeout,
-                heartbeatInterval, categoryId, orderIndex, notifyOnResult,
-                interactionMode, argumentPresets, prefixPresets, envVarPresets, adbCode
-            FROM scripts
-        """,
-            )
+        val cursor = database.query("SELECT * FROM scripts")
 
-            database.execSQL("DROP TABLE scripts")
-            database.execSQL("ALTER TABLE scripts_new RENAME TO scripts")
+        cursor.use { cursor ->
+            while (cursor.moveToNext()) {
+                val values = ContentValues()
+
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+                val oldCode = cursor.getString(cursor.getColumnIndexOrThrow("code"))
+
+                val codePagesJson = JSONArray().apply { put(oldCode) }.toString()
+
+                values.put("id", id)
+                values.put("name", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                values.put("codePages", codePagesJson)
+                values.put("page_names", "[]")
+                values.put("interpreter", cursor.getString(cursor.getColumnIndexOrThrow("interpreter")))
+                values.put("fileExtension", cursor.getString(cursor.getColumnIndexOrThrow("fileExtension")))
+                values.put("commandPrefix", cursor.getString(cursor.getColumnIndexOrThrow("commandPrefix")))
+                values.put("runInBackground", cursor.getInt(cursor.getColumnIndexOrThrow("runInBackground")))
+                values.put("openNewSession", cursor.getInt(cursor.getColumnIndexOrThrow("openNewSession")))
+                values.put("executionParams", cursor.getString(cursor.getColumnIndexOrThrow("executionParams")))
+                values.put("iconPath", cursor.getString(cursor.getColumnIndexOrThrow("iconPath")))
+                values.put("envVars", cursor.getString(cursor.getColumnIndexOrThrow("envVars")))
+                values.put("keepSessionOpen", cursor.getInt(cursor.getColumnIndexOrThrow("keepSessionOpen")))
+                values.put("useHeartbeat", cursor.getInt(cursor.getColumnIndexOrThrow("useHeartbeat")))
+                values.put("heartbeatTimeout", cursor.getInt(cursor.getColumnIndexOrThrow("heartbeatTimeout")))
+                values.put("heartbeatInterval", cursor.getInt(cursor.getColumnIndexOrThrow("heartbeatInterval")))
+
+                val catIdx = cursor.getColumnIndexOrThrow("categoryId")
+                if (cursor.isNull(catIdx)) {
+                    values.putNull("categoryId")
+                } else {
+                    values.put("categoryId", cursor.getLong(catIdx))
+                }
+
+                values.put("orderIndex", cursor.getInt(cursor.getColumnIndexOrThrow("orderIndex")))
+                values.put("notifyOnResult", cursor.getInt(cursor.getColumnIndexOrThrow("notifyOnResult")))
+                values.put("interactionMode", cursor.getString(cursor.getColumnIndexOrThrow("interactionMode")))
+                values.put("argumentPresets", cursor.getString(cursor.getColumnIndexOrThrow("argumentPresets")))
+                values.put("prefixPresets", cursor.getString(cursor.getColumnIndexOrThrow("prefixPresets")))
+                values.put("envVarPresets", cursor.getString(cursor.getColumnIndexOrThrow("envVarPresets")))
+                values.put("adbCode", cursor.getString(cursor.getColumnIndexOrThrow("adbCode")))
+
+                database.insert("scripts_new", SQLiteDatabase.CONFLICT_REPLACE, values)
+            }
         }
+
+        database.execSQL("DROP TABLE scripts")
+        database.execSQL("ALTER TABLE scripts_new RENAME TO scripts")
     }
+}
