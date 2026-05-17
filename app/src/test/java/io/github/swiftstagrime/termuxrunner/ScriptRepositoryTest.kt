@@ -25,6 +25,7 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertArrayEquals
@@ -256,7 +257,7 @@ class ScriptRepositoryImplTest {
                 ScriptEntity(
                     id = 1,
                     name = "FullFeature",
-                    code = "exit 0",
+                    codePages = listOf("exit 0"),
                     interpreter = "python",
                     fileExtension = "py",
                     commandPrefix = "python3",
@@ -425,7 +426,7 @@ class ScriptRepositoryImplTest {
 
             val entity = capturedScript.captured
             assertEquals("CheckFields", entity.name)
-            assertEquals("uptime", entity.code)
+            assertEquals(listOf("uptime"), entity.codePages)
             assertEquals("tsu", entity.commandPrefix)
             assertTrue(entity.runInBackground)
             assertFalse(entity.openNewSession)
@@ -563,17 +564,18 @@ class ScriptRepositoryImplTest {
     @Test
     fun `exportScripts produces JSON compatible with Version 4 specification`() =
         runTest {
-            val script = ScriptEntity(
-                name = "ExportTest",
-                code = "pwd",
-                interpreter = "sh",
-                envVars = emptyMap(),
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                keepSessionOpen = false,
-                iconPath = null,
-            )
+            val script =
+                ScriptEntity(
+                    name = "ExportTest",
+                    codePages = listOf("pwd"),
+                    interpreter = "sh",
+                    envVars = emptyMap(),
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
 
             coEvery { scriptDao.getAllScriptsOneShot() } returns listOf(script)
             coEvery { categoryDao.getAllCategoriesOneShot() } returns emptyList()
@@ -587,7 +589,7 @@ class ScriptRepositoryImplTest {
 
             val jsonString = outputFile.readText()
 
-            assertTrue(jsonString.contains("\"version\": 4"))
+            assertTrue(jsonString.contains("\"version\": 5"))
             assertTrue(jsonString.contains("\"themes\": []"))
 
             assertTrue(jsonString.contains("\"categories\": []"))
@@ -598,24 +600,25 @@ class ScriptRepositoryImplTest {
     @Test
     fun `importScripts handles Version 3 format by providing default empty themes`() =
         runTest {
-            val v3Json = """
-            {
-                "version": 3,
-                "categories": [
-                    {"id": 1, "name": "System", "orderIndex": 0}
-                ],
-                "scripts": [{
-                    "id": 10,
-                    "name": "V3Script",
-                    "code": "echo hello",
-                    "interpreter": "bash",
-                    "fileExtension": "sh",
-                    "envVars": {},
-                    "categoryId": 1
-                }],
-                "automations": []
-            }
-        """.trimIndent()
+            val v3Json =
+                """
+                {
+                    "version": 3,
+                    "categories": [
+                        {"id": 1, "name": "System", "orderIndex": 0}
+                    ],
+                    "scripts": [{
+                        "id": 10,
+                        "name": "V3Script",
+                        "code": "echo hello",
+                        "interpreter": "bash",
+                        "fileExtension": "sh",
+                        "envVars": {},
+                        "categoryId": 1
+                    }],
+                    "automations": []
+                }
+                """.trimIndent()
 
             val uri = setupMockFile("v3_backup.json", v3Json)
 
@@ -667,6 +670,73 @@ class ScriptRepositoryImplTest {
         }
 
     @Test
+    fun `importScripts converts legacy code field to codePages list`() =
+        runTest {
+            val json =
+                """
+                {
+                    "scripts": [
+                        {
+                            "id": 1,
+                            "name": "LegacyCode",
+                            "code": "echo legacy",
+                            "interpreter": "bash",
+                            "fileExtension": "sh",
+                            "commandPrefix": "",
+                            "runInBackground": false,
+                            "openNewSession": true,
+                            "executionParams": "",
+                            "envVars": {},
+                            "keepSessionOpen": false
+                        }
+                    ]
+                }
+                """.trimIndent()
+
+            val uri = setupMockFile("legacy_code.json", json)
+            coEvery { scriptDao.insertScript(capture(capturedScript)) } returns 1L
+
+            val result = repository.importScripts(uri)
+
+            assertTrue("Import failed: ${result.exceptionOrNull()}", result.isSuccess)
+            assertEquals(listOf("echo legacy"), capturedScript.captured.codePages)
+        }
+
+    @Test
+    fun `importScripts prefers codePages over legacy code when both present`() =
+        runTest {
+            val json =
+                """
+                {
+                    "scripts": [
+                        {
+                            "id": 1,
+                            "name": "BothFields",
+                            "code": "echo old",
+                            "codePages": ["echo page1", "echo page2"],
+                            "interpreter": "bash",
+                            "fileExtension": "sh",
+                            "commandPrefix": "",
+                            "runInBackground": false,
+                            "openNewSession": true,
+                            "executionParams": "",
+                            "envVars": {},
+                            "keepSessionOpen": false
+                        }
+                    ]
+                }
+                """.trimIndent()
+
+            val uri = setupMockFile("both_fields.json", json)
+            coEvery { scriptDao.insertScript(capture(capturedScript)) } returns 1L
+
+            val result = repository.importScripts(uri)
+
+            assertTrue("Import failed: ${result.exceptionOrNull()}", result.isSuccess)
+            assertEquals(listOf("echo page1", "echo page2"), capturedScript.captured.codePages)
+        }
+
+    @Test
     fun `importSingleScript correctly handles shebang with whitespaces and newlines`() =
         runTest {
             val rawContent = "   \n\n#!/bin/sh\necho 1"
@@ -675,6 +745,256 @@ class ScriptRepositoryImplTest {
             val result = repository.importSingleScript(uri)
 
             assertEquals(rawContent, result.getOrThrow().code)
+        }
+
+    @Test
+    fun `getAllScripts returns flow of domain models`() =
+        runTest {
+            val entity =
+                ScriptEntity(
+                    name = "Test",
+                    codePages = listOf("echo 1"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
+            coEvery { scriptDao.getAllScripts() } returns kotlinx.coroutines.flow.flowOf(listOf(entity))
+
+            val collectedLists = repository.getAllScripts().toList()
+
+            assertEquals(1, collectedLists.size)
+            assertEquals(1, collectedLists[0].size)
+            assertEquals("Test", collectedLists[0][0].name)
+        }
+
+    @Test
+    fun `getScriptById returns script when exists`() =
+        runTest {
+            val entity =
+                ScriptEntity(
+                    id = 5,
+                    name = "Found",
+                    codePages = listOf("ls"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
+            coEvery { scriptDao.getScriptById(5) } returns entity
+
+            val result = repository.getScriptById(5)
+
+            assertNotNull(result)
+            assertEquals("Found", result!!.name)
+            coVerify { scriptDao.getScriptById(5) }
+        }
+
+    @Test
+    fun `getScriptById returns null when not found`() =
+        runTest {
+            coEvery { scriptDao.getScriptById(999) } returns null
+
+            val result = repository.getScriptById(999)
+
+            assertFalse(result != null)
+        }
+
+    @Test
+    fun `insertScript delegates to dao and returns id`() =
+        runTest {
+            val script =
+                io.github.swiftstagrime.termuxrunner.domain.model.Script(
+                    name = "New",
+                    codePages = listOf("pwd"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    runInBackground = false,
+                    openNewSession = true,
+                    keepSessionOpen = false,
+                )
+            coEvery { scriptDao.insertScript(any()) } returns 42L
+
+            val id = repository.insertScript(script)
+
+            assertEquals(42, id)
+            coVerify { scriptDao.insertScript(any()) }
+        }
+
+    @Test
+    fun `deleteScript delegates to dao`() =
+        runTest {
+            val script =
+                io.github.swiftstagrime.termuxrunner.domain.model.Script(
+                    id = 10,
+                    name = "DeleteMe",
+                    codePages = listOf("exit"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    runInBackground = false,
+                    openNewSession = true,
+                    keepSessionOpen = false,
+                )
+
+            repository.deleteScript(script)
+
+            coVerify { scriptDao.deleteScript(any()) }
+        }
+
+    @Test
+    fun `getScriptByAdbCode returns script when found`() =
+        runTest {
+            val entity =
+                ScriptEntity(
+                    id = 1,
+                    name = "AdbScript",
+                    codePages = listOf("ls"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                    adbCode = "ABC123",
+                )
+            coEvery { scriptDao.getScriptByAdbCode("ABC123") } returns entity
+
+            val result = repository.getScriptByAdbCode("ABC123")
+
+            assertTrue(result.isSuccess)
+            assertEquals("AdbScript", result.getOrThrow().name)
+        }
+
+    @Test
+    fun `getScriptByAdbCode returns failure when not found`() =
+        runTest {
+            coEvery { scriptDao.getScriptByAdbCode("MISSING") } returns null
+
+            val result = repository.getScriptByAdbCode("MISSING")
+
+            assertTrue(result.isFailure)
+        }
+
+    @Test
+    fun `exportScripts includes pageNames in export`() =
+        runTest {
+            val script =
+                ScriptEntity(
+                    id = 1,
+                    name = "PagesTest",
+                    codePages = listOf("echo 1", "echo 2"),
+                    pageNames = listOf("Main", "Secondary"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                    adbCode = "test2",
+                )
+
+            coEvery { scriptDao.getAllScriptsOneShot() } returns listOf(script)
+            coEvery { categoryDao.getAllCategoriesOneShot() } returns emptyList()
+            coEvery { automationDao.getAllAutomationsOneShot() } returns emptyList()
+            coEvery { customThemeDao.getAllThemesOneShot() } returns emptyList()
+
+            val outputFile = java.io.File(context.cacheDir, "pages_export.json")
+            val uri = Uri.fromFile(outputFile)
+
+            repository.exportScripts(uri)
+
+            val jsonString = outputFile.readText()
+            val decoded = Json.decodeFromString<FullBackupDto>(jsonString)
+            val exportedScript = decoded.scripts.first()
+
+            assertEquals(listOf("echo 1", "echo 2"), exportedScript.codePages)
+            assertEquals(listOf("Main", "Secondary"), exportedScript.pageNames)
+        }
+
+    @Test
+    fun `importScripts preserves pageNames when present`() =
+        runTest {
+            val json =
+                """
+                {
+                    "categories": [],
+                    "scripts": [{
+                        "id": 1,
+                        "name": "PageNameTest",
+                        "codePages": ["echo a", "echo b"],
+                        "pageNames": ["First", "Second"],
+                        "interpreter": "bash",
+                        "fileExtension": "sh",
+                        "commandPrefix": "",
+                        "runInBackground": false,
+                        "openNewSession": true,
+                        "executionParams": "",
+                        "envVars": {},
+                        "keepSessionOpen": false
+                    }],
+                    "automations": []
+                }
+                """.trimIndent()
+
+            val uri = setupMockFile("pagenames.json", json)
+            coEvery { scriptDao.insertScript(capture(capturedScript)) } returns 1L
+
+            val result = repository.importScripts(uri)
+            assertTrue("Import failed: ${result.exceptionOrNull()}", result.isSuccess)
+
+            val entity = capturedScript.captured
+            assertEquals(listOf("echo a", "echo b"), entity.codePages)
+            assertEquals(listOf("First", "Second"), entity.pageNames)
+        }
+
+    @Test
+    fun `importScripts generates pageNames when missing`() =
+        runTest {
+            val json =
+                """
+                {
+                    "categories": [],
+                    "scripts": [{
+                        "id": 1,
+                        "name": "NoPageNames",
+                        "codePages": ["echo x", "echo y", "echo z"],
+                        "interpreter": "bash",
+                        "fileExtension": "sh",
+                        "commandPrefix": "",
+                        "runInBackground": false,
+                        "openNewSession": true,
+                        "executionParams": "",
+                        "envVars": {},
+                        "keepSessionOpen": false
+                    }],
+                    "automations": []
+                }
+                """.trimIndent()
+
+            val uri = setupMockFile("no_pagenames.json", json)
+            coEvery { scriptDao.insertScript(capture(capturedScript)) } returns 1L
+
+            val result = repository.importScripts(uri)
+            assertTrue("Import failed: ${result.exceptionOrNull()}", result.isSuccess)
+
+            val entity = capturedScript.captured
+            assertEquals(listOf("Main", "Page 2", "Page 3"), entity.pageNames)
         }
 }
 

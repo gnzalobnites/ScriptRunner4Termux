@@ -9,7 +9,9 @@ import kotlinx.serialization.Serializable
 data class ScriptExportDto(
     val id: Int = 0,
     val name: String,
-    val code: String,
+    val codePages: List<String> = emptyList(),
+    val code: String? = null,
+    val pageNames: List<String> = emptyList(),
     val categoryId: Int? = null,
     val interpreter: String = "",
     val fileExtension: String = "",
@@ -36,7 +38,8 @@ fun Script.toExportDto(base64Icon: String?): ScriptExportDto =
     ScriptExportDto(
         id = id,
         name = name,
-        code = code,
+        codePages = codePages,
+        pageNames = pageNames,
         categoryId = categoryId,
         interpreter = interpreter,
         fileExtension = fileExtension,
@@ -62,10 +65,25 @@ fun Script.toExportDto(base64Icon: String?): ScriptExportDto =
 fun ScriptExportDto.toEntity(
     newIconPath: String?,
     mappedCategoryId: Int?,
-): ScriptEntity =
-    ScriptEntity(
+): ScriptEntity {
+    val migratedCodePages =
+        when {
+            codePages.isNotEmpty() -> codePages
+            !code.isNullOrEmpty() -> listOf(code)
+            else -> listOf("")
+        }
+
+    val migratedPageNames =
+        if (pageNames.size == migratedCodePages.size) {
+            pageNames
+        } else {
+            migratedCodePages.mapIndexed { index, _ -> if (index == 0) "Main" else "Page ${index + 1}" }
+        }
+
+    return ScriptEntity(
         name = name,
-        code = code,
+        codePages = migratedCodePages,
+        pageNames = migratedPageNames,
         interactionMode = interactionMode,
         interpreter = interpreter,
         fileExtension = fileExtension,
@@ -87,3 +105,4 @@ fun ScriptExportDto.toEntity(
         categoryId = mappedCategoryId,
         adbCode = adbCode,
     )
+}

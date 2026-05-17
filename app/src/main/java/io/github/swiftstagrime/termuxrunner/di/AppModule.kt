@@ -51,7 +51,7 @@ object AppModule {
         customThemeDao: CustomThemeDao,
         appDatabase: AppDatabase,
         @ApplicationContext context: Context,
-    ): ScriptRepository = ScriptRepositoryImpl(dao, categoryDao, automationDao,customThemeDao, appDatabase,context)
+    ): ScriptRepository = ScriptRepositoryImpl(dao, categoryDao, automationDao, customThemeDao, appDatabase, context)
 
     @Provides
     @Singleton

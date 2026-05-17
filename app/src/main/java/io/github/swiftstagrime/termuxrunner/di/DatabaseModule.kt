@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.swiftstagrime.termuxrunner.data.local.AppDatabase
+import io.github.swiftstagrime.termuxrunner.data.local.MIGRATION_6_7
 import io.github.swiftstagrime.termuxrunner.data.local.dao.AutomationDao
 import io.github.swiftstagrime.termuxrunner.data.local.dao.AutomationLogDao
 import io.github.swiftstagrime.termuxrunner.data.local.dao.CategoryDao
@@ -30,6 +31,7 @@ object DatabaseModule {
                 AppDatabase::class.java,
                 "script_runner_secure.db",
             ).openHelperFactory(keyManagerFactory)
+            .addMigrations(MIGRATION_6_7)
             .enableMultiInstanceInvalidation()
             .fallbackToDestructiveMigration(false)
             .build()

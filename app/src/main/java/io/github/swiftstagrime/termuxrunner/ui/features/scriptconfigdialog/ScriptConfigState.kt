@@ -13,7 +13,8 @@ class ScriptConfigState(
 ) {
     var name by mutableStateOf(script.name)
     var nameError by mutableStateOf(false)
-    var code by mutableStateOf(script.code)
+    var codePages by mutableStateOf(script.codePages)
+    var pageNames by mutableStateOf(script.pageNames)
     var interpreter by mutableStateOf(script.interpreter)
     var fileExtension by mutableStateOf(script.fileExtension)
     var commandPrefix by mutableStateOf(script.commandPrefix)
@@ -54,7 +55,8 @@ class ScriptConfigState(
             iconPath = iconPath,
             categoryId = selectedCategoryId,
             useHeartbeat = useHeartbeat,
-            code = code,
+            codePages = codePages,
+            pageNames = pageNames,
             executionParams = executionParams,
             heartbeatInterval = heartbeatInterval.toLongOrNull()?.times(MS_TO_S) ?: original.heartbeatInterval,
             heartbeatTimeout = heartbeatTimeout.toLongOrNull()?.times(MS_TO_S) ?: original.heartbeatTimeout,

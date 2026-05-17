@@ -23,8 +23,9 @@ data class AutomationExportDto(
     val requireCharging: Boolean,
     val batteryThreshold: Int,
 )
-fun AutomationExportDto.toEntity(newScriptId: Int): AutomationEntity {
-    return AutomationEntity(
+
+fun AutomationExportDto.toEntity(newScriptId: Int): AutomationEntity =
+    AutomationEntity(
         scriptId = newScriptId,
         label = this.label,
         type = this.type,
@@ -41,9 +42,8 @@ fun AutomationExportDto.toEntity(newScriptId: Int): AutomationEntity {
         requireCharging = this.requireCharging,
         batteryThreshold = this.batteryThreshold,
         lastRunTimestamp = null,
-        nextRunTimestamp = null
+        nextRunTimestamp = null,
     )
-}
 
 fun Automation.toExportDto() =
     AutomationExportDto(

@@ -109,6 +109,15 @@
     <string name="editor_untitled">Sin título</string>
     <string name="editor_placeholder"># Empieza a programar…</string>
     <string name="editor_search_placeholder">Buscar…</string>
+    <string name="cd_add_page">Añadir página</string>
+    <string name="cd_delete_page">Eliminar página</string>
+    <string name="cd_page">Página</string>
+    <string name="cd_confirm_delete_page">¿Eliminar esta página?</string>
+    <string name="cd_page_count">Página %1$d de %2$d</string>
+    <string name="cd_rename_page">Renombrar</string>
+    <string name="cd_page_name">Nombre de página</string>
+    <string name="cd_ok">Aceptar</string>
+    <string name="cd_default_page_name">Página %1$d</string>
     <string name="cd_undo">Deshacer</string>
     <string name="cd_redo">Rehacer</string>
     <string name="cd_comment">Comentar</string>
@@ -158,7 +167,7 @@
     <string name="pulse_interval_s">Intervalo de Pulso (s)</string>
     <string name="timeout_limit_s">Límite de Tiempo (s)</string>
     <string name="pulse_how_often_the_script_signals_it_is_alive_timeout_restart_if_no_signal_received_after_this_time">Pulso: Con qué frecuencia el script señala que está vivo.\nLímite: Reiniciar si no se recibe señal después de este tiempo.</string>
-    <string name="experimental_warning">¡Advertencia! Experimental - puede afectar al script o gastar batería y CPU.</string>
+    <string name="experimental_warning">Con python instalado funciona como monitor por socket. Sin python usa el modo Lazarus y gasta batería - Instala python para una mejor experiencia.</string>
     <string name="btn_add_variable">Añadir variable</string>
     <string name="open_termux_settings">Abrir ajustes de Termux</string>
     <string name="finish_setup_label">He terminado la configuración</string>

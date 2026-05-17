@@ -1,0 +1,7 @@
+Changes:
+1) Added script pages - split your scripts into multiple tabs
+2) Added socket mode for resurrection monitoring
+3) Fixed export issue for old backups
+4) Updated to Android API 37
+
+Please note that Network permission is now required - it's needed for the socket mode, app doesn't interact with network otherwise

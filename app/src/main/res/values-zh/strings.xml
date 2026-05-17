@@ -109,6 +109,15 @@
     <string name="editor_untitled">无标题</string>
     <string name="editor_placeholder"># 开始编写代码…</string>
     <string name="editor_search_placeholder">查找…</string>
+    <string name="cd_add_page">添加页面</string>
+    <string name="cd_delete_page">删除页面</string>
+    <string name="cd_page">页面</string>
+    <string name="cd_confirm_delete_page">删除此页面？</string>
+    <string name="cd_page_count">第 %1$d 页，共 %2$d 页</string>
+    <string name="cd_rename_page">重命名</string>
+    <string name="cd_page_name">页面名称</string>
+    <string name="cd_ok">确定</string>
+    <string name="cd_default_page_name">页面 %1$d</string>
     <string name="cd_undo">撤销</string>
     <string name="cd_redo">重做</string>
     <string name="cd_comment">注释</string>
@@ -159,7 +168,7 @@
     <string name="timeout_limit_s">超时限制 (秒)</string>
     <string name="adb_code">ADB 代码（默认为空）</string>
     <string name="pulse_how_often_the_script_signals_it_is_alive_timeout_restart_if_no_signal_received_after_this_time">心跳：脚本发送存活信号的频率。\n超时：若在此时间后未收到信号则重启。</string>
-    <string name="experimental_warning">警告！实验性功能 - 可能会导致脚本出错或消耗过多电池和 CPU。</string>
+    <string name="experimental_warning">安装 python 后以 socket 监控方式运行。未安装 python 时回退到 Lazarus 模式并浪费电量 - 安装 python 以获得更好的体验。</string>
     <string name="btn_add_variable">添加变量</string>
     <string name="open_termux_settings">打开 Termux 设置</string>
     <string name="finish_setup_label">我已完成设置</string>

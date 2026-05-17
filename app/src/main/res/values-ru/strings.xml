@@ -108,6 +108,15 @@
     <string name="editor_untitled">Без названия</string>
     <string name="editor_placeholder"># Начните кодить…</string>
     <string name="editor_search_placeholder">Найти…</string>
+    <string name="cd_add_page">Добавить страницу</string>
+    <string name="cd_delete_page">Удалить страницу</string>
+    <string name="cd_page">Страница</string>
+    <string name="cd_confirm_delete_page">Удалить эту страницу?</string>
+    <string name="cd_page_count">Страница %1$d из %2$d</string>
+    <string name="cd_rename_page">Переименовать</string>
+    <string name="cd_page_name">Имя страницы</string>
+    <string name="cd_ok">OK</string>
+    <string name="cd_default_page_name">Страница %1$d</string>
     <string name="cd_undo">Отменить</string>
     <string name="cd_redo">Вернуть</string>
     <string name="cd_comment">Закомментировать</string>
@@ -158,7 +167,7 @@
     <string name="pulse_interval_s">Интервал пульса (с)</string>
     <string name="timeout_limit_s">Лимит таймаута (с)</string>
     <string name="pulse_how_often_the_script_signals_it_is_alive_timeout_restart_if_no_signal_received_after_this_time">Пульс: Как часто скрипт сообщает, что он работает.\nТаймаут: Перезапуск, если сигнал не получен за это время.</string>
-    <string name="experimental_warning">Внимание! Экспериментально — может нарушить работу скрипта или расходовать батарею и нагружать систему.</string>
+    <string name="experimental_warning">С установленным python работает как socket-монитор. Без python используется режим Lazarus, который расходует батарею - Установите python для лучшего опыта.</string>
     <string name="btn_add_variable">Добавить переменную</string>
     <string name="open_termux_settings">Открыть настройки Termux</string>
     <string name="finish_setup_label">Я закончил настройку</string>
@@ -284,7 +293,7 @@
     <string name="notif_finished_success">Успешно завершено</string>
     <string name="notif_finished_error">Завершено с ошибкой (Код: %1$d)</string>
     <string name="notif_restart_count"> • Перезапуски: %1$d</string>
-    <string name="notif_details_format">Статус: %1$s%2$s\nВ сети: %3$дм • Сигнал: %4$дс назад</string>
+    <string name="notif_details_format">Статус: %1$s%2$s\nВ сети: %3$d м • Сигнал: %4$d с назад</string>
     <string name="notif_monitoring_title">Мониторинг: %1$s</string>
     <string name="notif_stop_monitoring">Остановить мониторинг</string>
     <string name="channel_monitor_name">Монитор скриптов</string>

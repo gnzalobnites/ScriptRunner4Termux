@@ -23,14 +23,14 @@ kotlin {
 }
 android {
     namespace = "io.github.swiftstagrime.termuxrunner"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.swiftstagrime.termuxrunner"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 170
-        versionName = "1.7.0"
+        targetSdk = 37
+        versionCode = 172
+        versionName = "1.7.2"
 
         testInstrumentationRunner = "io.github.swiftstagrime.termuxrunner.di.HiltTestRunner"
     }

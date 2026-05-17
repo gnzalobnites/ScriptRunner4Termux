@@ -14,7 +14,7 @@ val sampleScripts =
         Script(
             id = 1,
             name = "Update System",
-            code = "pkg update && pkg upgrade -y",
+            codePages = listOf("pkg update && pkg upgrade -y"),
             interpreter = "bash",
             executionParams = "",
             runInBackground = false,
@@ -22,7 +22,7 @@ val sampleScripts =
         Script(
             id = 2,
             name = "Python Server",
-            code = "print('Starting server...')\nimport http.server",
+            codePages = listOf("print('Starting server...')\nimport http.server"),
             interpreter = "python",
             executionParams = "-m http.server 8080",
             runInBackground = true,
@@ -32,7 +32,7 @@ val configSampleScript =
     Script(
         id = 1,
         name = "Python API Server",
-        code = "print('hello')",
+        codePages = listOf("print('hello')"),
         interpreter = "python",
         executionParams = "-m http.server",
         runInBackground = false,
@@ -136,7 +136,7 @@ val sampleCategories =
 val textInputScript =
     Script(
         id = 1,
-        code = "print('hello')",
+        codePages = listOf("print('hello')"),
         name = "Custom Deployment",
         interactionMode = InteractionMode.TEXT_INPUT,
         commandPrefix = "sudo",
@@ -147,7 +147,7 @@ val textInputScript =
 val multiChoiceScript =
     Script(
         id = 1,
-        code = "print('hello')",
+        codePages = listOf("print('hello')"),
         name = "System Cleaner",
         interactionMode = InteractionMode.MULTI_CHOICE,
         prefixPresets = listOf("", "tsu", "sudo"),

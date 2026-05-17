@@ -16,7 +16,6 @@ import io.github.swiftstagrime.termuxrunner.data.local.dto.FullBackupDto
 import io.github.swiftstagrime.termuxrunner.data.local.dto.ScriptExportDto
 import io.github.swiftstagrime.termuxrunner.data.local.dto.toEntity
 import io.github.swiftstagrime.termuxrunner.data.local.dto.toExportDto
-import io.github.swiftstagrime.termuxrunner.data.local.entity.AutomationEntity
 import io.github.swiftstagrime.termuxrunner.data.local.entity.CategoryEntity
 import io.github.swiftstagrime.termuxrunner.data.local.entity.toAutomationDomain
 import io.github.swiftstagrime.termuxrunner.data.local.entity.toScriptEntity
@@ -65,8 +64,7 @@ class ScriptRepositoryImpl
 
         override suspend fun getScriptById(id: Int): Script? = dao.getScriptById(id)?.toScriptDomain()
 
-        override suspend fun insertScript(script: Script): Int =
-            dao.insertScript(script.toScriptEntity()).toInt()
+        override suspend fun insertScript(script: Script): Int = dao.insertScript(script.toScriptEntity()).toInt()
 
         override suspend fun deleteScript(script: Script) {
             dao.deleteScript(script.toScriptEntity())
@@ -76,97 +74,104 @@ class ScriptRepositoryImpl
             dao.updateScriptsOrder(orders)
         }
 
-    override suspend fun exportScripts(uri: Uri): Result<Unit> = runCatching {
-        val backup = withContext(Dispatchers.IO) {
-            appDatabase.withTransaction {
-                val categories = categoryDao.getAllCategoriesOneShot()
-                val scriptEntities = dao.getAllScriptsOneShot()
-                val automations = automationDao.getAllAutomationsOneShot()
-                val themes = customThemeDao.getAllThemesOneShot()
+        override suspend fun exportScripts(uri: Uri): Result<Unit> =
+            runCatching {
+                val backup =
+                    withContext(Dispatchers.IO) {
+                        appDatabase.withTransaction {
+                            val categories = categoryDao.getAllCategoriesOneShot()
+                            val scriptEntities = dao.getAllScriptsOneShot()
+                            val automations = automationDao.getAllAutomationsOneShot()
+                            val themes = customThemeDao.getAllThemesOneShot()
 
-                Triple(categories, scriptEntities, Pair(automations, themes))
-            }
-        }
+                            Triple(categories, scriptEntities, Pair(automations, themes))
+                        }
+                    }
 
-        val (catEnt, scriptEnt, others) = backup
+                val (catEnt, scriptEnt, others) = backup
 
-        val scripts = scriptEnt.map { entity ->
-            val script = entity.toScriptDomain()
-            var base64Icon: String? = null
-            script.iconPath?.let { path ->
-                val file = File(path)
-                if (file.exists()) {
-                    val bytes = file.readBytes()
-                    base64Icon = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                val scripts =
+                    scriptEnt.map { entity ->
+                        val script = entity.toScriptDomain()
+                        var base64Icon: String? = null
+                        script.iconPath?.let { path ->
+                            val file = File(path)
+                            if (file.exists()) {
+                                val bytes = file.readBytes()
+                                base64Icon = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                            }
+                        }
+                        script.toExportDto(base64Icon).copy(id = entity.id)
+                    }
+
+                val finalBackup =
+                    FullBackupDto(
+                        version = 5,
+                        categories = catEnt.map { CategoryExportDto(it.id, it.name, it.orderIndex) },
+                        scripts = scripts,
+                        automations = others.first.map { it.toAutomationDomain().toExportDto() },
+                        themes = others.second.map { it.toExportDto() },
+                    )
+
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        outputStream.write(json.encodeToString(finalBackup).toByteArray())
+                    } ?: throw ExportStreamException()
                 }
             }
-            script.toExportDto(base64Icon).copy(id = entity.id)
-        }
 
-        val finalBackup = FullBackupDto(
-            version = 4,
-            categories = catEnt.map { CategoryExportDto(it.id, it.name, it.orderIndex) },
-            scripts = scripts,
-            automations = others.first.map { it.toAutomationDomain().toExportDto() },
-            themes = others.second.map { it.toExportDto() }
-        )
+        override suspend fun importScripts(uri: Uri): Result<Unit> =
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val backup =
+                        context.contentResolver.openInputStream(uri)?.use { stream ->
+                            val jsonString = stream.bufferedReader().readText()
+                            val jsonElement = json.parseToJsonElement(jsonString)
+                            if (jsonElement is JsonArray) {
+                                FullBackupDto(scripts = json.decodeFromJsonElement<List<ScriptExportDto>>(jsonElement))
+                            } else {
+                                json.decodeFromJsonElement<FullBackupDto>(jsonElement)
+                            }
+                        } ?: throw ImportStreamException()
 
-        withContext(Dispatchers.IO) {
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                outputStream.write(json.encodeToString(finalBackup).toByteArray())
-            } ?: throw ExportStreamException()
-        }
-    }
+                    appDatabase.withTransaction {
+                        val existingThemes = customThemeDao.getAllThemesOneShot().map { it.name }.toSet()
+                        backup.themes.forEach { themeDto ->
+                            if (!existingThemes.contains(themeDto.name)) {
+                                customThemeDao.insertTheme(themeDto.toEntity())
+                            }
+                        }
 
-    override suspend fun importScripts(uri: Uri): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            val backup = context.contentResolver.openInputStream(uri)?.use { stream ->
-                val jsonString = stream.bufferedReader().readText()
-                val jsonElement = json.parseToJsonElement(jsonString)
-                if (jsonElement is JsonArray) {
-                    FullBackupDto(scripts = json.decodeFromJsonElement<List<ScriptExportDto>>(jsonElement))
-                } else {
-                    json.decodeFromJsonElement<FullBackupDto>(jsonElement)
-                }
-            } ?: throw ImportStreamException()
+                        val existingCategoryMap = categoryDao.getAllCategoriesOneShot().associate { it.name to it.id }
+                        val categoryIdMap = mutableMapOf<Int, Int?>()
+                        backup.categories.forEach { dto ->
+                            val existingId = existingCategoryMap[dto.name]
+                            if (existingId != null) {
+                                categoryIdMap[dto.id] = existingId
+                            } else {
+                                val newId = categoryDao.insertCategory(CategoryEntity(name = dto.name, orderIndex = dto.orderIndex))
+                                categoryIdMap[dto.id] = newId.toInt()
+                            }
+                        }
 
-            appDatabase.withTransaction {
-                val existingThemes = customThemeDao.getAllThemesOneShot().map { it.name }.toSet()
-                backup.themes.forEach { themeDto ->
-                    if (!existingThemes.contains(themeDto.name)) {
-                        customThemeDao.insertTheme(themeDto.toEntity())
+                        val scriptIdMap = mutableMapOf<Int, Int>()
+                        backup.scripts.forEach { dto ->
+                            val newIconPath = saveBase64Icon(dto.iconBase64)
+                            val mappedCategoryId = dto.categoryId?.let { categoryIdMap[it] }
+                            val entity = dto.toEntity(newIconPath, mappedCategoryId)
+                            val newId = dao.insertScript(entity)
+                            scriptIdMap[dto.id] = newId.toInt()
+                        }
+
+                        val automationEntities =
+                            backup.automations.mapNotNull { dto ->
+                                val newScriptId = scriptIdMap[dto.scriptId] ?: return@mapNotNull null
+                                dto.toEntity(newScriptId)
+                            }
+                        automationEntities.forEach { automationDao.insertAutomation(it) }
                     }
                 }
-
-                val existingCategoryMap = categoryDao.getAllCategoriesOneShot().associate { it.name to it.id }
-                val categoryIdMap = mutableMapOf<Int, Int?>()
-                backup.categories.forEach { dto ->
-                    val existingId = existingCategoryMap[dto.name]
-                    if (existingId != null) {
-                        categoryIdMap[dto.id] = existingId
-                    } else {
-                        val newId = categoryDao.insertCategory(CategoryEntity(name = dto.name, orderIndex = dto.orderIndex))
-                        categoryIdMap[dto.id] = newId.toInt()
-                    }
-                }
-
-                val scriptIdMap = mutableMapOf<Int, Int>()
-                backup.scripts.forEach { dto ->
-                    val newIconPath = saveBase64Icon(dto.iconBase64)
-                    val mappedCategoryId = dto.categoryId?.let { categoryIdMap[it] }
-                    val entity = dto.toEntity(newIconPath, mappedCategoryId)
-                    val newId = dao.insertScript(entity)
-                    scriptIdMap[dto.id] = newId.toInt()
-                }
-
-                val automationEntities = backup.automations.mapNotNull { dto ->
-                    val newScriptId = scriptIdMap[dto.scriptId] ?: return@mapNotNull null
-                    dto.toEntity(newScriptId)
-                }
-                automationEntities.forEach { automationDao.insertAutomation(it) }
             }
-        }
-    }
 
         override suspend fun importSingleScript(uri: Uri): Result<Script> =
             runCatching {
@@ -179,23 +184,21 @@ class ScriptRepositoryImpl
                     val fileName = getFileName(uri) ?: "Imported Script"
                     val extension = fileName.substringAfterLast('.', "sh")
 
-                    // Logic for interpreter and shebang
+                    // Logic for the shebang
                     val (finalCode, detectedInterpreter) = processScriptContent(content, extension)
 
-                    val newScript =
-                        Script(
-                            name = fileName.substringBeforeLast('.'),
-                            code = finalCode,
-                            interpreter = detectedInterpreter,
-                            fileExtension = extension,
-                            runInBackground = false,
-                            openNewSession = false,
-                            keepSessionOpen = false,
-                        )
+                    val scriptName = fileName.substringBeforeLast('.')
 
-                    // We return the script object so the UI can decide
-                    // whether to open it in the editor first or save it directly.
-                    newScript
+                    Script(
+                        name = scriptName,
+                        codePages = listOf(finalCode),
+                        pageNames = listOf("Main"),
+                        interpreter = detectedInterpreter,
+                        fileExtension = extension,
+                        runInBackground = false,
+                        openNewSession = false,
+                        keepSessionOpen = false,
+                    )
                 }
             }
 

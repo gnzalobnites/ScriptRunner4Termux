@@ -262,9 +262,9 @@ fun TileSettingsScreen(
 fun TileSettingsScreenPreview() {
     val mockMappings =
         mapOf(
-            1 to Script(id = 1, name = "Production Backup", code = ""),
+            1 to Script(id = 1, name = "Production Backup", codePages = listOf("")),
             2 to null,
-            3 to Script(id = 3, name = "Check Network", code = ""),
+            3 to Script(id = 3, name = "Check Network", codePages = listOf("")),
             4 to null,
             5 to null,
         )

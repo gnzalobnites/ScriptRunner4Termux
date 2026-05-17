@@ -191,9 +191,9 @@ private fun ScriptTile(
 fun ScriptWidgetPreview() {
     val mockScripts =
         listOf(
-            Script(id = 1, name = "Backup", code = ""),
-            Script(id = 2, name = "Server Status", code = ""),
-            Script(id = 3, name = "Clean Logs", code = ""),
+            Script(id = 1, name = "Backup", codePages = listOf("")),
+            Script(id = 2, name = "Server Status", codePages = listOf("")),
+            Script(id = 3, name = "Clean Logs", codePages = listOf("")),
         )
     ScriptWidgetContent(scripts = mockScripts, appWidgetId = 0)
 }

@@ -167,7 +167,7 @@ class DaoTests {
     private fun createScript(name: String = "Test") =
         ScriptEntity(
             name = name,
-            code = "echo hello",
+            codePages = listOf("echo hello"),
             interpreter = "bash",
             runInBackground = true,
             openNewSession = false,

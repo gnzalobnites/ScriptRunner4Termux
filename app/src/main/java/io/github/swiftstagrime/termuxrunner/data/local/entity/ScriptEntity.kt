@@ -10,7 +10,10 @@ import io.github.swiftstagrime.termuxrunner.domain.model.Script
 data class ScriptEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val code: String,
+    @ColumnInfo(name = "codePages")
+    val codePages: List<String>,
+    @ColumnInfo(name = "page_names", defaultValue = "")
+    val pageNames: List<String> = emptyList(),
     val interpreter: String,
     val fileExtension: String = "sh",
     val commandPrefix: String = "",
@@ -47,7 +50,8 @@ data class ScriptEntity(
         Script(
             id = id,
             name = name,
-            code = code,
+            codePages = codePages,
+            pageNames = pageNames,
             interpreter = interpreter,
             fileExtension = fileExtension,
             commandPrefix = commandPrefix,
@@ -75,7 +79,8 @@ fun Script.toScriptEntity(): ScriptEntity =
     ScriptEntity(
         id = id,
         name = name,
-        code = code,
+        codePages = codePages,
+        pageNames = pageNames,
         interpreter = interpreter,
         fileExtension = fileExtension,
         commandPrefix = commandPrefix,

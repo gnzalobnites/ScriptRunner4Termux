@@ -35,6 +35,7 @@ class DataLayerMappingTest {
         assertAllPropertiesMapped(
             source = Script::class,
             destination = ScriptEntity::class,
+            ignoreProperties = setOf("code"),
         )
 
         assertAllPropertiesMapped(
@@ -114,16 +115,15 @@ class DataLayerMappingTest {
         assertAllPropertiesMapped(
             source = CustomThemeEntity::class,
             destination = CustomThemeExportDto::class,
-            ignoreProperties = setOf("id")
+            ignoreProperties = setOf("id"),
         )
 
         assertAllPropertiesMapped(
             source = CustomThemeExportDto::class,
             destination = CustomThemeEntity::class,
-            ignoreProperties = setOf("id")
+            ignoreProperties = setOf("id"),
         )
     }
-
 
     private fun assertAllPropertiesMapped(
         source: KClass<*>,

@@ -43,7 +43,7 @@ class RunScriptUseCaseTest {
                 Script(
                     id = 1,
                     name = "SmallScript",
-                    code = "echo 'hello'",
+                    codePages = listOf("echo 'hello'"),
                     interpreter = "bash",
                 )
 
@@ -72,7 +72,7 @@ class RunScriptUseCaseTest {
     fun `large script is saved to bridge repository`() =
         runTest {
             val largeCode = "a".repeat(4001)
-            val script = Script(id = 2, name = "LargeScript", code = largeCode)
+            val script = Script(id = 2, name = "LargeScript", codePages = listOf(largeCode))
 
             coEvery { fileRepo.saveToBridge(any(), any()) } returns "/sdcard/bridge/script_2.sh"
 
@@ -93,7 +93,7 @@ class RunScriptUseCaseTest {
                 Script(
                     id = 3,
                     name = "EnvTest",
-                    code = "env",
+                    codePages = listOf("env"),
                     envVars = mapOf("VALID_KEY" to "value'with'quote", "123INVALID" to "bad"),
                 )
 
@@ -114,7 +114,7 @@ class RunScriptUseCaseTest {
                 Script(
                     id = 4,
                     name = "PyTest",
-                    code = "print()",
+                    codePages = listOf("print()"),
                     interpreter = "python3",
                     fileExtension = "",
                 )
@@ -129,17 +129,58 @@ class RunScriptUseCaseTest {
         }
 
     @Test
-    fun `heartbeat wrapper is added when enabled`() =
+    fun `TCP wrapper is added when port available`() =
         runTest {
             val script =
                 Script(
                     id = 5,
-                    name = "HeartbeatTest",
-                    code = "sleep 10",
+                    name = "TcpTest",
+                    codePages = listOf("sleep 10"),
                     useHeartbeat = true,
                     heartbeatInterval = 5000L,
                 )
             every { monitorRepo.hasNotificationPermission() } returns true
+            every { monitorRepo.startMonitoring(script) } returns 8765
+
+            useCase(script)
+
+            val commandSlot = slot<String>()
+            verify {
+                termuxRepo.runCommand(
+                    command = capture(commandSlot),
+                    runInBackground = any(),
+                    sessionAction = any(),
+                    scriptId = any(),
+                    scriptName = any(),
+                    notifyOnResult = any(),
+                    automationId = any(),
+                )
+            }
+
+            val command = commandSlot.captured
+
+            assertTrue(command.contains("socket.AF_INET"))
+            assertTrue(command.contains("127.0.0.1"))
+            assertTrue(command.contains("8765"))
+            assertTrue(command.contains("EXIT_OK"))
+            assertTrue(command.contains("python3"))
+
+            verify { monitorRepo.startMonitoring(script) }
+        }
+
+    @Test
+    fun `broadcast heartbeat wrapper used as fallback when port is null`() =
+        runTest {
+            val script =
+                Script(
+                    id = 6,
+                    name = "HeartbeatFallback",
+                    codePages = listOf("sleep 10"),
+                    useHeartbeat = true,
+                    heartbeatInterval = 5000L,
+                )
+            every { monitorRepo.hasNotificationPermission() } returns true
+            every { monitorRepo.startMonitoring(script) } returns null
 
             useCase(script)
 
@@ -160,7 +201,6 @@ class RunScriptUseCaseTest {
 
             assertTrue(command.contains("am broadcast -a $testPackageName.HEARTBEAT"))
             assertTrue(command.contains("am broadcast -a $testPackageName.SCRIPT_FINISHED"))
-
             assertTrue(command.contains("HEARTBEAT_PID=$!"))
             assertTrue(command.contains("trap cleanup_heartbeat EXIT"))
 
@@ -170,7 +210,7 @@ class RunScriptUseCaseTest {
     @Test
     fun `keepSessionOpen appends shell hack`() =
         runTest {
-            val script = Script(id = 6, name = "KeepOpen", code = "ls", keepSessionOpen = true)
+            val script = Script(id = 6, name = "KeepOpen", codePages = listOf("ls"), keepSessionOpen = true)
 
             useCase(script)
 
@@ -184,7 +224,7 @@ class RunScriptUseCaseTest {
     @Test
     fun `runtimeArgs are correctly appended to script executionParams`() =
         runTest {
-            val script = Script(id = 7, name = "ArgTest", code = "ls", executionParams = "-l")
+            val script = Script(id = 7, name = "ArgTest", codePages = listOf("ls"), executionParams = "-l")
 
             useCase(script, runtimeArgs = "-a")
 
@@ -197,7 +237,7 @@ class RunScriptUseCaseTest {
     @Test
     fun `runtime arguments containing double quotes are escaped correctly for bash -c`() =
         runTest {
-            val script = Script(id = 8, name = "QuoteTest", code = "ls")
+            val script = Script(id = 8, name = "QuoteTest", codePages = listOf("ls"))
             useCase(script, runtimeArgs = "--name=\"My Script\"")
 
             val commandSlot = slot<String>()
@@ -210,7 +250,7 @@ class RunScriptUseCaseTest {
     @Test
     fun `returns error message command when large script fails to save to bridge`() =
         runTest {
-            val script = Script(id = 9, name = "FailTest", code = "a".repeat(4001))
+            val script = Script(id = 9, name = "FailTest", codePages = listOf("a".repeat(4001)))
 
             coEvery { fileRepo.saveToBridge(any(), any()) } throws RuntimeException("Disk Full")
 
