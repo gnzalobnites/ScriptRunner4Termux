@@ -3,8 +3,8 @@ package io.github.swiftstagrime.termuxrunner.data.repository
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
@@ -57,25 +57,29 @@ class MonitoringRepositoryImpl
             val latch = CountDownLatch(1)
             var port: Int? = null
 
-            val connection = object : ServiceConnection {
-                override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                    try {
-                        val binder = service as HeartbeatService.ScriptPortBinder
-                        port = binder.getPort(scriptId)
-                    } catch (e: Exception) {
-                    } finally {
-                        latch.countDown()
+            val connection =
+                object : ServiceConnection {
+                    override fun onServiceConnected(
+                        name: ComponentName?,
+                        service: IBinder?,
+                    ) {
                         try {
-                            context.unbindService(this)
-                        } catch (_: Exception) {
+                            val binder = service as HeartbeatService.ScriptPortBinder
+                            port = binder.getPort(scriptId)
+                        } catch (e: Exception) {
+                        } finally {
+                            latch.countDown()
+                            try {
+                                context.unbindService(this)
+                            } catch (_: Exception) {
+                            }
                         }
                     }
-                }
 
-                override fun onServiceDisconnected(name: ComponentName?) {
-                    latch.countDown()
+                    override fun onServiceDisconnected(name: ComponentName?) {
+                        latch.countDown()
+                    }
                 }
-            }
 
             val bindIntent = Intent(context, HeartbeatService::class.java)
             val bound = context.bindService(bindIntent, connection, Context.BIND_AUTO_CREATE)

@@ -129,9 +129,10 @@ class EditorViewModel
         fun saveScript(script: Script) {
             viewModelScope.launch(ioDispatcher) {
                 try {
-                    val scriptToSave = _currentScript.value?.let { current ->
-                        script.copy(codePages = current.codePages)
-                    } ?: script
+                    val scriptToSave =
+                        _currentScript.value?.let { current ->
+                            script.copy(codePages = current.codePages)
+                        } ?: script
                     updateScriptUseCase(scriptToSave)
 
                     try {
@@ -168,9 +169,10 @@ class EditorViewModel
             val script = _currentScript.value ?: return
             if (index < 0 || index >= script.codePages.size) return
             currentPageIndex = index
-            editingCode = TextFieldValue(
-                text = script.codePages[index],
-            )
+            editingCode =
+                TextFieldValue(
+                    text = script.codePages[index],
+                )
         }
 
         fun addPage() {
@@ -183,7 +185,10 @@ class EditorViewModel
             switchPage(newPages.size - 1)
         }
 
-        fun renamePage(index: Int, name: String) {
+        fun renamePage(
+            index: Int,
+            name: String,
+        ) {
             val script = _currentScript.value ?: return
             val newNames = script.pageNames.toMutableList()
             if (index in newNames.indices) {
@@ -192,7 +197,10 @@ class EditorViewModel
             }
         }
 
-        fun reorderPage(fromIndex: Int, toIndex: Int) {
+        fun reorderPage(
+            fromIndex: Int,
+            toIndex: Int,
+        ) {
             val script = _currentScript.value ?: return
             if (fromIndex == toIndex) return
             if (fromIndex !in script.codePages.indices || toIndex !in script.codePages.indices) return
@@ -232,11 +240,12 @@ class EditorViewModel
                 newNames.removeAt(index)
             }
             _currentScript.value = script.copy(codePages = newPages, pageNames = newNames)
-            val targetIndex = when {
-                index < currentPageIndex -> currentPageIndex - 1
-                currentPageIndex >= newPages.size -> newPages.size - 1
-                else -> currentPageIndex
-            }
+            val targetIndex =
+                when {
+                    index < currentPageIndex -> currentPageIndex - 1
+                    currentPageIndex >= newPages.size -> newPages.size - 1
+                    else -> currentPageIndex
+                }
             switchPage(targetIndex)
         }
 

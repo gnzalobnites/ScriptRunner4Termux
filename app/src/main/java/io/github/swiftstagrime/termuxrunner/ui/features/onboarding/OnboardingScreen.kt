@@ -247,7 +247,11 @@ private fun OnboardingPageContent(
 
 @Composable
 private fun TermuxInstallStep(isInstalled: Boolean) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
         StepIcon(Icons.Default.InstallMobile, isDone = isInstalled)
         Text(stringResource(R.string.setup_step_1_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(stringResource(R.string.setup_step_1_desc), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)

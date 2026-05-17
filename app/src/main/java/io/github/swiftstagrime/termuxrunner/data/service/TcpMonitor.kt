@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.InetAddress
@@ -31,18 +30,19 @@ class TcpMonitor(
         val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
         serverSocket = server
 
-        monitorJob = scope.launch {
-            try {
-                val client = server.accept()
-                handleClient(client)
-            } catch (e: Exception) {
-                if (e !is SocketException) {
-                    onScriptKilled()
+        monitorJob =
+            scope.launch {
+                try {
+                    val client = server.accept()
+                    handleClient(client)
+                } catch (e: Exception) {
+                    if (e !is SocketException) {
+                        onScriptKilled()
+                    }
+                } finally {
+                    stop()
                 }
-            } finally {
-                stop()
             }
-        }
         return server.localPort
     }
 
@@ -50,11 +50,12 @@ class TcpMonitor(
         withContext(Dispatchers.IO) {
             client.use { socket ->
                 val reader = socket.getInputStream().bufferedReader()
-                val line = try {
-                    reader.readLine()
-                } catch (e: Exception) {
-                    null
-                }
+                val line =
+                    try {
+                        reader.readLine()
+                    } catch (e: Exception) {
+                        null
+                    }
 
                 if (line == "EXIT_OK") {
                     onScriptFinishedNormally()

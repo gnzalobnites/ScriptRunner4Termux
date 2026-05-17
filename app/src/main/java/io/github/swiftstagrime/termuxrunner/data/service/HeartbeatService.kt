@@ -273,11 +273,12 @@ class HeartbeatService : Service() {
 
     private fun attemptRestart(state: ScriptMonitorState) {
         state.restartCount++
-        state.status = UiText.StringResource(
-            R.string.notif_status_resurrecting,
-            state.restartCount,
-            MAX_RESTARTS,
-        )
+        state.status =
+            UiText.StringResource(
+                R.string.notif_status_resurrecting,
+                state.restartCount,
+                MAX_RESTARTS,
+            )
         state.lastHeartbeatTime = System.currentTimeMillis()
 
         // Relaunch
@@ -343,19 +344,22 @@ class HeartbeatService : Service() {
         val uptimeMins = (currentTime - state.serviceStartTime) / 60_000
         val secondsSincePulse = (currentTime - state.lastHeartbeatTime) / 1000
 
-        val restartText = if (state.restartCount > 0) {
-            UiText.StringResource(R.string.notif_restart_count, state.restartCount).asString(this)
-        } else {
-            ""
-        }
+        val restartText =
+            if (state.restartCount > 0) {
+                UiText.StringResource(R.string.notif_restart_count, state.restartCount).asString(this)
+            } else {
+                ""
+            }
 
-        val contentText = UiText.StringResource(
-            R.string.notif_details_format,
-            state.status.asString(this),
-            restartText,
-            uptimeMins,
-            secondsSincePulse
-        ).asString(this)
+        val contentText =
+            UiText
+                .StringResource(
+                    R.string.notif_details_format,
+                    state.status.asString(this),
+                    restartText,
+                    uptimeMins,
+                    secondsSincePulse,
+                ).asString(this)
 
         buildAndNotify(
             title = UiText.StringResource(R.string.notif_monitoring_title, state.name).asString(this),

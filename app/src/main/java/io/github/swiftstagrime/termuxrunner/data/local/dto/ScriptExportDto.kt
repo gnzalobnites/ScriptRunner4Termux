@@ -66,18 +66,19 @@ fun ScriptExportDto.toEntity(
     newIconPath: String?,
     mappedCategoryId: Int?,
 ): ScriptEntity {
-    val migratedCodePages = when {
-        codePages.isNotEmpty() -> codePages
-        !code.isNullOrEmpty() -> listOf(code)
-        else -> listOf("")
-    }
+    val migratedCodePages =
+        when {
+            codePages.isNotEmpty() -> codePages
+            !code.isNullOrEmpty() -> listOf(code)
+            else -> listOf("")
+        }
 
-    val migratedPageNames = if (pageNames.size == migratedCodePages.size) {
-        pageNames
-    } else {
-        migratedCodePages.mapIndexed { index, _ -> if (index == 0) "Main" else "Page ${index + 1}" }
-    }
-
+    val migratedPageNames =
+        if (pageNames.size == migratedCodePages.size) {
+            pageNames
+        } else {
+            migratedCodePages.mapIndexed { index, _ -> if (index == 0) "Main" else "Page ${index + 1}" }
+        }
 
     return ScriptEntity(
         name = name,

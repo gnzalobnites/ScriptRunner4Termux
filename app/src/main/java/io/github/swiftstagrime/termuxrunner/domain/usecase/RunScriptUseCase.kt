@@ -141,7 +141,7 @@ try:
 except:
     pass
 " <&3 &
-      PYTHON_PID=${dollar}!
+      PYTHON_PID=$dollar!
 
       # Run the actual script
       ( $commandToRun )

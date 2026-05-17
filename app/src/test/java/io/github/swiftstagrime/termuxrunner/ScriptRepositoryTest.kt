@@ -564,17 +564,18 @@ class ScriptRepositoryImplTest {
     @Test
     fun `exportScripts produces JSON compatible with Version 4 specification`() =
         runTest {
-            val script = ScriptEntity(
-                name = "ExportTest",
-                codePages = listOf("pwd"),
-                interpreter = "sh",
-                envVars = emptyMap(),
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                keepSessionOpen = false,
-                iconPath = null,
-            )
+            val script =
+                ScriptEntity(
+                    name = "ExportTest",
+                    codePages = listOf("pwd"),
+                    interpreter = "sh",
+                    envVars = emptyMap(),
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
 
             coEvery { scriptDao.getAllScriptsOneShot() } returns listOf(script)
             coEvery { categoryDao.getAllCategoriesOneShot() } returns emptyList()
@@ -599,24 +600,25 @@ class ScriptRepositoryImplTest {
     @Test
     fun `importScripts handles Version 3 format by providing default empty themes`() =
         runTest {
-            val v3Json = """
-            {
-                "version": 3,
-                "categories": [
-                    {"id": 1, "name": "System", "orderIndex": 0}
-                ],
-                "scripts": [{
-                    "id": 10,
-                    "name": "V3Script",
-                    "code": "echo hello",
-                    "interpreter": "bash",
-                    "fileExtension": "sh",
-                    "envVars": {},
-                    "categoryId": 1
-                }],
-                "automations": []
-            }
-        """.trimIndent()
+            val v3Json =
+                """
+                {
+                    "version": 3,
+                    "categories": [
+                        {"id": 1, "name": "System", "orderIndex": 0}
+                    ],
+                    "scripts": [{
+                        "id": 10,
+                        "name": "V3Script",
+                        "code": "echo hello",
+                        "interpreter": "bash",
+                        "fileExtension": "sh",
+                        "envVars": {},
+                        "categoryId": 1
+                    }],
+                    "automations": []
+                }
+                """.trimIndent()
 
             val uri = setupMockFile("v3_backup.json", v3Json)
 
@@ -748,19 +750,20 @@ class ScriptRepositoryImplTest {
     @Test
     fun `getAllScripts returns flow of domain models`() =
         runTest {
-            val entity = ScriptEntity(
-                name = "Test",
-                codePages = listOf("echo 1"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                commandPrefix = "",
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                envVars = emptyMap(),
-                keepSessionOpen = false,
-                iconPath = null,
-            )
+            val entity =
+                ScriptEntity(
+                    name = "Test",
+                    codePages = listOf("echo 1"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
             coEvery { scriptDao.getAllScripts() } returns kotlinx.coroutines.flow.flowOf(listOf(entity))
 
             val collectedLists = repository.getAllScripts().toList()
@@ -773,20 +776,21 @@ class ScriptRepositoryImplTest {
     @Test
     fun `getScriptById returns script when exists`() =
         runTest {
-            val entity = ScriptEntity(
-                id = 5,
-                name = "Found",
-                codePages = listOf("ls"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                commandPrefix = "",
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                envVars = emptyMap(),
-                keepSessionOpen = false,
-                iconPath = null,
-            )
+            val entity =
+                ScriptEntity(
+                    id = 5,
+                    name = "Found",
+                    codePages = listOf("ls"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                )
             coEvery { scriptDao.getScriptById(5) } returns entity
 
             val result = repository.getScriptById(5)
@@ -809,15 +813,16 @@ class ScriptRepositoryImplTest {
     @Test
     fun `insertScript delegates to dao and returns id`() =
         runTest {
-            val script = io.github.swiftstagrime.termuxrunner.domain.model.Script(
-                name = "New",
-                codePages = listOf("pwd"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                runInBackground = false,
-                openNewSession = true,
-                keepSessionOpen = false,
-            )
+            val script =
+                io.github.swiftstagrime.termuxrunner.domain.model.Script(
+                    name = "New",
+                    codePages = listOf("pwd"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    runInBackground = false,
+                    openNewSession = true,
+                    keepSessionOpen = false,
+                )
             coEvery { scriptDao.insertScript(any()) } returns 42L
 
             val id = repository.insertScript(script)
@@ -829,16 +834,17 @@ class ScriptRepositoryImplTest {
     @Test
     fun `deleteScript delegates to dao`() =
         runTest {
-            val script = io.github.swiftstagrime.termuxrunner.domain.model.Script(
-                id = 10,
-                name = "DeleteMe",
-                codePages = listOf("exit"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                runInBackground = false,
-                openNewSession = true,
-                keepSessionOpen = false,
-            )
+            val script =
+                io.github.swiftstagrime.termuxrunner.domain.model.Script(
+                    id = 10,
+                    name = "DeleteMe",
+                    codePages = listOf("exit"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    runInBackground = false,
+                    openNewSession = true,
+                    keepSessionOpen = false,
+                )
 
             repository.deleteScript(script)
 
@@ -848,21 +854,22 @@ class ScriptRepositoryImplTest {
     @Test
     fun `getScriptByAdbCode returns script when found`() =
         runTest {
-            val entity = ScriptEntity(
-                id = 1,
-                name = "AdbScript",
-                codePages = listOf("ls"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                commandPrefix = "",
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                envVars = emptyMap(),
-                keepSessionOpen = false,
-                iconPath = null,
-                adbCode = "ABC123",
-            )
+            val entity =
+                ScriptEntity(
+                    id = 1,
+                    name = "AdbScript",
+                    codePages = listOf("ls"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                    adbCode = "ABC123",
+                )
             coEvery { scriptDao.getScriptByAdbCode("ABC123") } returns entity
 
             val result = repository.getScriptByAdbCode("ABC123")
@@ -884,22 +891,23 @@ class ScriptRepositoryImplTest {
     @Test
     fun `exportScripts includes pageNames in export`() =
         runTest {
-            val script = ScriptEntity(
-                id = 1,
-                name = "PagesTest",
-                codePages = listOf("echo 1", "echo 2"),
-                pageNames = listOf("Main", "Secondary"),
-                interpreter = "bash",
-                fileExtension = "sh",
-                commandPrefix = "",
-                runInBackground = false,
-                openNewSession = true,
-                executionParams = "",
-                envVars = emptyMap(),
-                keepSessionOpen = false,
-                iconPath = null,
-                adbCode = "test2",
-            )
+            val script =
+                ScriptEntity(
+                    id = 1,
+                    name = "PagesTest",
+                    codePages = listOf("echo 1", "echo 2"),
+                    pageNames = listOf("Main", "Secondary"),
+                    interpreter = "bash",
+                    fileExtension = "sh",
+                    commandPrefix = "",
+                    runInBackground = false,
+                    openNewSession = true,
+                    executionParams = "",
+                    envVars = emptyMap(),
+                    keepSessionOpen = false,
+                    iconPath = null,
+                    adbCode = "test2",
+                )
 
             coEvery { scriptDao.getAllScriptsOneShot() } returns listOf(script)
             coEvery { categoryDao.getAllCategoriesOneShot() } returns emptyList()

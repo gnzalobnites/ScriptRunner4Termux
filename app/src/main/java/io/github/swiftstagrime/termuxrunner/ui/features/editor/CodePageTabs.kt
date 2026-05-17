@@ -57,7 +57,11 @@ fun CodePageTabs(
     val listState = rememberLazyListState()
     val shouldScroll by remember {
         derivedStateOf {
-            currentPageIndex >= (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0)
+            currentPageIndex >= (
+                listState.layoutInfo.visibleItemsInfo
+                    .lastOrNull()
+                    ?.index ?: 0
+            )
         }
     }
 
@@ -91,8 +95,9 @@ fun CodePageTabs(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items(pageCount) { index ->
-                val pageName = pageNames.getOrNull(index)?.takeIf { it.isNotBlank() }
-                    ?: stringResource(R.string.cd_default_page_name, index + 1)
+                val pageName =
+                    pageNames.getOrNull(index)?.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.cd_default_page_name, index + 1)
                 CodePageTab(
                     label = pageName,
                     isSelected = index == currentPageIndex,
@@ -118,13 +123,14 @@ fun CodePageTabs(
                     onDrag = { dragAmount ->
                         if (dragIndex == index) {
                             dragOffsetX += dragAmount
-                            dropTargetIndex = if (dragOffsetX > 60f && index < pageCount - 1) {
-                                index + 1
-                            } else if (dragOffsetX < -60f && index > 0) {
-                                index - 1
-                            } else {
-                                -1
-                            }
+                            dropTargetIndex =
+                                if (dragOffsetX > 60f && index < pageCount - 1) {
+                                    index + 1
+                                } else if (dragOffsetX < -60f && index > 0) {
+                                    index - 1
+                                } else {
+                                    -1
+                                }
                         }
                     },
                     onDragEnd = {
@@ -231,12 +237,10 @@ private fun CodePageTab(
                     shadowElevation = elevation
                     this.alpha = alpha
                     translationX = dragOffsetX
-                }
-                .background(
+                }.background(
                     color = backgroundColor,
                     shape = RoundedCornerShape(8.dp),
-                )
-                .pointerInput(Unit) {
+                ).pointerInput(Unit) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = { onStartDrag() },
                         onDrag = { _, dragAmount ->
@@ -245,15 +249,13 @@ private fun CodePageTab(
                         onDragEnd = { onDragEnd() },
                         onDragCancel = { onDragEnd() },
                     )
-                }
-                .pointerInput(Unit) {
+                }.pointerInput(Unit) {
                     if (!isDragging) {
                         detectTapGestures(
                             onTap = { onClick() },
                         )
                     }
-                }
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                }.padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(

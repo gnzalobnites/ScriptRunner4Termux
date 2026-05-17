@@ -41,9 +41,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun customThemeDao(): CustomThemeDao
 }
 
-val MIGRATION_6_7: Migration = object : Migration(6, 7) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("""
+val MIGRATION_6_7: Migration =
+    object : Migration(6, 7) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL(
+                """
             CREATE TABLE scripts_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -70,9 +72,11 @@ val MIGRATION_6_7: Migration = object : Migration(6, 7) {
                 envVarPresets TEXT NOT NULL DEFAULT '',
                 adbCode TEXT DEFAULT NULL
             )
-        """)
+        """,
+            )
 
-        database.execSQL("""
+            database.execSQL(
+                """
             INSERT INTO scripts_new (
                 id, name, codePages, page_names, interpreter, fileExtension, commandPrefix,
                 runInBackground, openNewSession, executionParams, iconPath,
@@ -90,9 +94,10 @@ val MIGRATION_6_7: Migration = object : Migration(6, 7) {
                 heartbeatInterval, categoryId, orderIndex, notifyOnResult,
                 interactionMode, argumentPresets, prefixPresets, envVarPresets, adbCode
             FROM scripts
-        """)
+        """,
+            )
 
-        database.execSQL("DROP TABLE scripts")
-        database.execSQL("ALTER TABLE scripts_new RENAME TO scripts")
+            database.execSQL("DROP TABLE scripts")
+            database.execSQL("ALTER TABLE scripts_new RENAME TO scripts")
+        }
     }
-}

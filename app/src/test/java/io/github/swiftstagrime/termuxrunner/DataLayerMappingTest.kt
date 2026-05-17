@@ -114,16 +114,15 @@ class DataLayerMappingTest {
         assertAllPropertiesMapped(
             source = CustomThemeEntity::class,
             destination = CustomThemeExportDto::class,
-            ignoreProperties = setOf("id")
+            ignoreProperties = setOf("id"),
         )
 
         assertAllPropertiesMapped(
             source = CustomThemeExportDto::class,
             destination = CustomThemeEntity::class,
-            ignoreProperties = setOf("id")
+            ignoreProperties = setOf("id"),
         )
     }
-
 
     private fun assertAllPropertiesMapped(
         source: KClass<*>,
