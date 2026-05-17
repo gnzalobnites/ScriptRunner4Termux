@@ -18,7 +18,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-@Config(application = TestApplication::class)
+@Config(application = TestApplication::class, sdk = [34])
 @RunWith(RobolectricTestRunner::class)
 class AutomationSchedulerTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()

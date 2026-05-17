@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@Config(application = TestApplication::class)
+@Config(application = TestApplication::class, sdk = [34])
 @RunWith(RobolectricTestRunner::class)
 class DeviceBootReceiverTest {
     private val mockDao = mockk<AutomationDao>(relaxed = true)

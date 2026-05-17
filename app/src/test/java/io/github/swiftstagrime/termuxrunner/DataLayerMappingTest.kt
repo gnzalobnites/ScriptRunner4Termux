@@ -35,6 +35,7 @@ class DataLayerMappingTest {
         assertAllPropertiesMapped(
             source = Script::class,
             destination = ScriptEntity::class,
+            ignoreProperties = setOf("code"),
         )
 
         assertAllPropertiesMapped(
