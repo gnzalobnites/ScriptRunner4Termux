@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.onboarding
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.ClipData
 import androidx.compose.animation.Crossfade

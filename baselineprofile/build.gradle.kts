@@ -3,29 +3,19 @@ plugins {
     alias(libs.plugins.baselineprofile)
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-    }
-}
-
-kotlin {
-    jvmToolchain(21)
-}
-
 android {
     namespace = "io.github.swiftstagrime.termuxrunner.baselineprofile"
-
     compileSdk = 36
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     defaultConfig {
         minSdk = 28
         targetSdk = 36
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -40,25 +30,34 @@ android {
     }
 }
 
+// Configuración de Baseline Profile para AGP 8.7.2
 baselineProfile {
-    useConnectedDevices = true
+    // No usar filter {} aquí, se configura en el módulo principal
+}
+
+// Configuración para que las tareas de compilación usen Java 17
+tasks.withType<JavaCompile>().configureEach {
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
 }
 
 dependencies {
+    implementation(libs.androidx.benchmark.macro.junit4)
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.junit)
     implementation(libs.androidx.espresso.core)
     implementation(libs.androidx.uiautomator)
-    implementation(libs.androidx.profileinstaller)
-    implementation(libs.androidx.benchmark.macro.junit4)
+    implementation(libs.androidx.compose.ui.test.junit4)
+    implementation(libs.androidx.compose.ui.test.manifest)
 }
 
-
 androidComponents {
-    onVariants { v ->
-        val artifactsLoader = v.artifacts.getBuiltArtifactsLoader()
-        v.instrumentationRunnerArguments.put(
-            "targetAppId",
-            v.testedApks.map { artifactsLoader.load(it)?.applicationId ?: "" }
-        )
+    beforeVariants { variant ->
+        // Solo habilitar benchmark para la variante de benchmark
+        if (variant.buildType == "benchmark") {
+            variant.enable = true
+        } else {
+            variant.enable = false
+        }
     }
 }

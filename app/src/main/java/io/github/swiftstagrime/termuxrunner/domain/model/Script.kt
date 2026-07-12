@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.model
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

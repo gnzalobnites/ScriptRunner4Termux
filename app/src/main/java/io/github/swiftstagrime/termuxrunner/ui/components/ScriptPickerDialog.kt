@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.components
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke

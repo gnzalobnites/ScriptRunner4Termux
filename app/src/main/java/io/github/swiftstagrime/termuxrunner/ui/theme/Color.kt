@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.theme
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.ui.graphics.Color
 

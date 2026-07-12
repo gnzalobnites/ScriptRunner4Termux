@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.scriptconfigdialog
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

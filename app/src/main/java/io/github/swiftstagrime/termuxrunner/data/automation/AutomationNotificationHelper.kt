@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.automation
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

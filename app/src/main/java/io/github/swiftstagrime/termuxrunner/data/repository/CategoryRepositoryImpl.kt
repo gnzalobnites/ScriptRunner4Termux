@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.data.local.dao.CategoryDao
 import io.github.swiftstagrime.termuxrunner.data.local.entity.toCategoryDomain

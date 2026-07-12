@@ -1,5 +1,11 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.automation
 
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
+
 import android.app.AlarmManager
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -22,11 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.swiftstagrime.termuxrunner.domain.model.Automation
 import io.github.swiftstagrime.termuxrunner.domain.model.AutomationType
 import io.github.swiftstagrime.termuxrunner.domain.model.Category
@@ -53,18 +54,16 @@ fun AutomationRoute(
     val automations by viewModel.automations.collectAsStateWithLifecycle()
     val allScripts by viewModel.allScripts.collectAsStateWithLifecycle()
     val allCategories by viewModel.allCategories.collectAsStateWithLifecycle()
-
     var hasExactAlarmPermission by rememberSaveable { mutableStateOf(true) }
     var selectedAutomationForHistory by rememberSaveable { mutableStateOf<Automation?>(null) }
-
     var flowState by rememberSaveable { mutableStateOf<AutomationFlowState>(AutomationFlowState.Idle) }
-
+    
     HandleLifecyclePermissions {
         hasExactAlarmPermission = checkExactAlarmPermission(context)
     }
-
+    
     val uiItems = rememberAutomationUiItems(automations, allScripts)
-
+    
     AutomationScreen(
         uiState = AutomationUiState(uiItems, hasExactAlarmPermission),
         onBackClick = onBackClick,
@@ -75,7 +74,7 @@ fun AutomationRoute(
         onShowHistory = { selectedAutomationForHistory = it },
         onRequestPermission = { launchExactAlarmSettings(context) },
     )
-
+    
     AutomationCreationFlow(
         flowState = flowState,
         allScripts = allScripts,
@@ -87,7 +86,7 @@ fun AutomationRoute(
             flowState = AutomationFlowState.Idle
         },
     )
-
+    
     AutomationHistoryView(
         selectedAutomation = selectedAutomationForHistory,
         onDismiss = { selectedAutomationForHistory = null },
@@ -104,14 +103,14 @@ private fun rememberAutomationUiItems(
     val colorError = MaterialTheme.colorScheme.error.toArgb()
     val colorSuccess = MaterialTheme.colorScheme.tertiary.toArgb()
     val colorIdle = MaterialTheme.colorScheme.outline.toArgb()
-
+    
     val timeTicker by produceState(System.currentTimeMillis()) {
         while (true) {
             delay(MINUTE_IN_MILLIS)
             value = System.currentTimeMillis()
         }
     }
-
+    
     return remember(automations, allScripts, timeTicker) {
         val scriptMap = allScripts.associateBy { it.id }
         automations.map { automation ->
@@ -190,11 +189,11 @@ private fun AutomationHistoryView(
     viewModel: AutomationViewModel,
 ) {
     if (selectedAutomation == null) return
-
+    
     val historyLogs by remember(selectedAutomation.id) {
         viewModel.getAutomationLogs(selectedAutomation.id)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
-
+    
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(),
@@ -246,14 +245,14 @@ private fun launchExactAlarmSettings(context: Context) {
 sealed class AutomationFlowState : Parcelable {
     @Parcelize
     object Idle : AutomationFlowState()
-
-    @Parcelize object PickingScript : AutomationFlowState()
-
-    @Parcelize data class PromptingRuntime(
+    @Parcelize
+    object PickingScript : AutomationFlowState()
+    @Parcelize
+    data class PromptingRuntime(
         val script: Script,
     ) : AutomationFlowState()
-
-    @Parcelize data class Configuring(
+    @Parcelize
+    data class Configuring(
         val script: Script,
         val runtime: ScriptRuntimeParams,
     ) : AutomationFlowState()

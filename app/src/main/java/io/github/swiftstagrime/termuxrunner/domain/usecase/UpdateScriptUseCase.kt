@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.usecase
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.domain.model.Script
 import io.github.swiftstagrime.termuxrunner.domain.repository.ScriptRepository

@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.usecase
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.data.automation.AutomationNotificationHelper
 import io.github.swiftstagrime.termuxrunner.data.local.dao.AutomationDao

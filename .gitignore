@@ -20,3 +20,13 @@ local.properties
 **/release/
 *.apk
 *.bundle
+
+fix.py
+resultado.py
+files-to-fixing.txt
+todo-kotlin.txt
+todo-layout-y-drawable.txt
+
+.cg/
+.kotlin/
+manifest.bin

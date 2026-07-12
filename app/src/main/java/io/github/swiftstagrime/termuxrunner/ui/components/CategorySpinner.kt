@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -29,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.AndroidUiModes.UI_MODE_NIGHT_YES
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.swiftstagrime.termuxrunner.R
@@ -61,18 +59,11 @@ fun CategorySpinner(
             onExpandedChange = { expanded = !expanded },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            val fillMaxWidth =
-                Modifier
-                    .fillMaxWidth()
             OutlinedTextField(
                 value = selectedCategory?.name ?: stringResource(R.string.uncategorized),
                 onValueChange = {},
                 readOnly = true,
-                modifier =
-                    fillMaxWidth.menuAnchor(
-                        ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                        true,
-                    ),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 leadingIcon = {
                     Icon(Icons.Default.Category, null, tint = MaterialTheme.colorScheme.primary)
@@ -160,21 +151,6 @@ private fun PreviewCategorySpinnerUncategorized() {
             CategorySpinner(
                 categories = sampleCategories,
                 selectedCategoryId = null,
-                onCategorySelected = {},
-                onAddNewClick = {},
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Category Selected", uiMode = UI_MODE_NIGHT_YES)
-@Composable
-private fun PreviewCategorySpinnerSelected() {
-    ScriptRunnerForTermuxTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            CategorySpinner(
-                categories = sampleCategories,
-                selectedCategoryId = 2,
                 onCategorySelected = {},
                 onAddNewClick = {},
             )

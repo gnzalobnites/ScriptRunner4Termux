@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.preview
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.graphics.Color
 import io.github.swiftstagrime.termuxrunner.domain.model.Automation

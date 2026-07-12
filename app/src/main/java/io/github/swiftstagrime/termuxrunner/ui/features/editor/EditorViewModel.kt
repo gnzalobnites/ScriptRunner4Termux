@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.editor
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.net.Uri
 import androidx.compose.runtime.getValue

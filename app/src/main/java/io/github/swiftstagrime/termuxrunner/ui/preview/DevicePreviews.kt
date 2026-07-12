@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.preview
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview

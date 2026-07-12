@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.widget.automationlogs
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import androidx.compose.runtime.collectAsState

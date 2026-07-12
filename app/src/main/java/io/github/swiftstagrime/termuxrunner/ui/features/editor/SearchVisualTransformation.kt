@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.editor
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString

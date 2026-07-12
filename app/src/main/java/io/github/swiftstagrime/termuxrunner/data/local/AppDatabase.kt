@@ -1,8 +1,8 @@
 package io.github.swiftstagrime.termuxrunner.data.local
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -21,29 +21,26 @@ import io.github.swiftstagrime.termuxrunner.data.local.entity.ScriptEntity
 import org.json.JSONArray
 
 @Database(
-    entities = [ScriptEntity::class, CategoryEntity::class, AutomationEntity::class, AutomationLogEntity::class, CustomThemeEntity::class],
-    version = 7,
-    exportSchema = true,
-    autoMigrations = [
-        AutoMigration(from = 1, to = 2), AutoMigration(
-            from = 2,
-            to = 3,
-        ), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6),
+    entities = [
+        ScriptEntity::class,
+        CategoryEntity::class,
+        AutomationEntity::class,
+        AutomationLogEntity::class,
+        CustomThemeEntity::class
     ],
+    version = 7,
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scriptDao(): ScriptDao
-
     abstract fun categoryDao(): CategoryDao
-
     abstract fun automationDao(): AutomationDao
-
     abstract fun automationLogDao(): AutomationLogDao
-
     abstract fun customThemeDao(): CustomThemeDao
 }
 
+// Migración manual de versión 6 a 7 (ya que AutoMigration no funciona)
 val MIGRATION_6_7: Migration = object : Migration(6, 7) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("""

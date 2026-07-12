@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.service
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

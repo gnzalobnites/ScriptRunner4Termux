@@ -23,11 +23,11 @@ import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.SaveableStateHolderNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.swiftstagrime.termuxrunner.ui.navigation.rememberEntryProvider
+import io.github.swiftstagrime.termuxrunner.ui.navigation.Route
+import io.github.swiftstagrime.termuxrunner.ui.navigation.ScriptRunnerEntryProvider
 import io.github.swiftstagrime.termuxrunner.ui.theme.ScriptRunnerForTermuxTheme
 
 @AndroidEntryPoint
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
             val accent by mainViewModel.selectedAccent.collectAsStateWithLifecycle()
             val mode by mainViewModel.selectedMode.collectAsStateWithLifecycle()
             val customTheme by mainViewModel.customTheme.collectAsStateWithLifecycle()
-            val backStack by mainViewModel.backStack.collectAsStateWithLifecycle()
+            
             CompositionLocalProvider(
                 LocalInspectionMode provides false,
             ) {
@@ -62,22 +62,11 @@ class MainActivity : AppCompatActivity() {
                                 .semantics { testTagsAsResourceId = true },
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        val entryProvider = rememberEntryProvider(mainViewModel)
-                        val saveableStateHolder = rememberSaveableStateHolder()
-                        if (backStack.isNotEmpty()) {
-                            NavDisplay(
-                                backStack = backStack,
-                                onBack = { mainViewModel.goBack() },
-                                entryDecorators =
-                                    listOf(
-                                        remember(saveableStateHolder) {
-                                            SaveableStateHolderNavEntryDecorator(saveableStateHolder)
-                                        },
-                                        rememberViewModelStoreNavEntryDecorator(),
-                                    ),
-                                entryProvider = entryProvider,
-                            )
-                        }
+                        val navController = rememberNavController()
+                        ScriptRunnerEntryProvider(
+                            mainViewModel = mainViewModel,
+                            navController = navController
+                        )
                     }
                 }
             }

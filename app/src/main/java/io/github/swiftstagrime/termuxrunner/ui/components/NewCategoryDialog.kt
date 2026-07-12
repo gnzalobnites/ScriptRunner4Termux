@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.components
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog

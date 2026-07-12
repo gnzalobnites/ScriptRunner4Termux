@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.core.net.toUri
 import io.github.swiftstagrime.termuxrunner.data.local.ImageStorageManager

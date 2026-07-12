@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.di
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn

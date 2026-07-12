@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.tiles
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.ComponentName
 import android.content.Context

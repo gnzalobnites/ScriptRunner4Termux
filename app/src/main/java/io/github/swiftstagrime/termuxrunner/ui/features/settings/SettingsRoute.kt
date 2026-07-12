@@ -1,4 +1,6 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.settings
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,12 +11,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.swiftstagrime.termuxrunner.R
 
 private const val GITHUB_URL = "https://github.com/SwiftStagRime/ScriptRunner_for_Termux"
-
 @Composable
 fun SettingsRoute(
     onBack: () -> Unit,
@@ -28,22 +27,18 @@ fun SettingsRoute(
     val selectedMode by viewModel.selectedMode.collectAsStateWithLifecycle()
     val ioMessage by viewModel.ioState.collectAsStateWithLifecycle()
     val exportFilename = stringResource(R.string.export_filename)
-
     val exportLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.CreateDocument("application/json"),
         ) { uri -> uri?.let { viewModel.exportData(it) } }
-
     val importBackupLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
         ) { uri -> uri?.let { viewModel.importData(it) } }
-
     val importFileLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
         ) { uri -> uri?.let { viewModel.importSingleScript(it) } }
-
     LaunchedEffect(Unit) {
         viewModel.navEvents.collect { event ->
             when (event) {
@@ -51,14 +46,12 @@ fun SettingsRoute(
             }
         }
     }
-
     LaunchedEffect(ioMessage) {
         ioMessage?.let {
             Toast.makeText(context, it.asString(context), Toast.LENGTH_SHORT).show()
             viewModel.clearMessage()
         }
     }
-
     val actions =
         SettingsActions(
             onAccentChange = viewModel::setAccent,
@@ -70,7 +63,6 @@ fun SettingsRoute(
             onBack = onBack,
             onNavigateToCustomTheme = onNavigateToCustomTheme,
         )
-
     SettingsScreen(
         selectedAccent = selectedAccent,
         selectedMode = selectedMode,

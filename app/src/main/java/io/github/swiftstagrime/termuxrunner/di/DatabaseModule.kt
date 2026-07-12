@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.di
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import androidx.room.Room
@@ -33,7 +34,7 @@ object DatabaseModule {
             ).openHelperFactory(keyManagerFactory)
             .addMigrations(MIGRATION_6_7)
             .enableMultiInstanceInvalidation()
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration()
             .build()
 
     @Provides

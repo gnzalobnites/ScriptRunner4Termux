@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.receiver
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.BroadcastReceiver
 import android.content.Context

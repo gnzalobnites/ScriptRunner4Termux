@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.local.entity
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

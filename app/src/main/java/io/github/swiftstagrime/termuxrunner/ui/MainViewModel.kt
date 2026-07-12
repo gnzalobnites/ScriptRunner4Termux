@@ -1,8 +1,9 @@
 package io.github.swiftstagrime.termuxrunner.ui
+import androidx.hilt.navigation.compose.hiltViewModel
+// // import androidx.navigation.String
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation3.runtime.NavKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.swiftstagrime.termuxrunner.domain.repository.CustomThemeRepository
 import io.github.swiftstagrime.termuxrunner.domain.repository.UserPreferencesRepository
@@ -30,8 +31,8 @@ class MainViewModel
         private val _isReady = MutableStateFlow(false)
         val isReady = _isReady.asStateFlow()
 
-        private val _backStack = mutableListOf<NavKey>()
-        val backStack = MutableStateFlow<List<NavKey>>(emptyList())
+        private val _backStack = mutableListOf<String>()
+        val backStack = MutableStateFlow<List<String>>(emptyList())
 
         val selectedAccent =
             userPreferencesRepository.selectedAccent
@@ -64,9 +65,9 @@ class MainViewModel
             }
         }
 
-        fun navigateTo(key: NavKey) {
+        fun navigateTo(route: Route) {
             val current = _backStack.toMutableList()
-            current.add(key)
+            current.add(route.route)
             updateStack(current)
         }
 
@@ -78,15 +79,15 @@ class MainViewModel
             }
         }
 
-        fun replaceRoot(key: NavKey) {
-            updateStack(listOf(key))
+        fun replaceRoot(route: Route) {
+            updateStack(listOf(route.route))
         }
 
-        private fun setRoot(key: NavKey) {
-            updateStack(listOf(key))
+        private fun setRoot(route: Route) {
+            updateStack(listOf(route.route))
         }
 
-        private fun updateStack(newStack: List<NavKey>) {
+        private fun updateStack(newStack: List<String>) {
             _backStack.clear()
             _backStack.addAll(newStack)
             backStack.value = newStack.toList()

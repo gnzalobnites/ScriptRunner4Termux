@@ -1,4 +1,9 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.home
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -20,11 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.swiftstagrime.termuxrunner.R
 import io.github.swiftstagrime.termuxrunner.domain.model.InteractionMode
 import io.github.swiftstagrime.termuxrunner.domain.model.Script
@@ -46,29 +46,22 @@ fun HomeRoute(
 ) {
     val uiState by viewModel.homeUiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
     val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
-
     var scriptForShortcutStyle by remember { mutableStateOf<Script?>(null) }
-
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
     val termuxPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
         ) { isGranted ->
             viewModel.onPermissionResult(isGranted)
         }
-
     var scriptToPrompt by remember { mutableStateOf<Script?>(null) }
-
     var isBatteryUnrestricted by remember {
         mutableStateOf(BatteryUtils.isIgnoringBatteryOptimizations(context))
     }
-
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer =
@@ -80,7 +73,6 @@ fun HomeRoute(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -96,7 +88,6 @@ fun HomeRoute(
                 }
             }
         }
-
     val requestNotifications =
         remember {
             {
@@ -106,14 +97,12 @@ fun HomeRoute(
                             context,
                             android.Manifest.permission.POST_NOTIFICATIONS,
                         ) == PackageManager.PERMISSION_GRANTED
-
                     if (!hasPermission) {
                         notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
             }
         }
-
     ObserveAsEvents(viewModel.uiEvent) { event ->
         when (event) {
             is HomeUiEvent.ShowSnackbar -> {
@@ -123,11 +112,9 @@ fun HomeRoute(
                     )
                 }
             }
-
             is HomeUiEvent.RequestTermuxPermission -> {
                 termuxPermissionLauncher.launch("com.termux.permission.RUN_COMMAND")
             }
-
             is HomeUiEvent.CreateShortcut -> {
                 if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
                     scope.launch {
@@ -140,7 +127,6 @@ fun HomeRoute(
                     }
                     return@ObserveAsEvents
                 }
-
                 if (!MiuiUtils.hasShortcutPermission(context)) {
                     scope.launch {
                         val result =
@@ -165,7 +151,6 @@ fun HomeRoute(
                     }
                     return@ObserveAsEvents
                 }
-
                 try {
                     val pinned =
                         ShortcutManagerCompat.requestPinShortcut(
@@ -173,7 +158,6 @@ fun HomeRoute(
                             event.shortcutInfo,
                             null,
                         )
-
                     if (!pinned) {
                         scope.launch {
                             snackbarHostState.showSnackbar(
@@ -199,7 +183,6 @@ fun HomeRoute(
             }
         }
     }
-
     val actions =
         remember(viewModel, context) {
             HomeActions(
@@ -234,7 +217,6 @@ fun HomeRoute(
                 onNavigateToAutomation = onNavigateToAutomation,
             )
         }
-
     HomeScreen(
         uiState = uiState,
         searchQuery = searchQuery,
@@ -246,7 +228,6 @@ fun HomeRoute(
         snackbarHostState = snackbarHostState,
         actions = actions,
     )
-
     scriptForShortcutStyle?.let { script ->
         ShortcutStylePickerDialog(
             script = script,
@@ -257,7 +238,6 @@ fun HomeRoute(
             },
         )
     }
-
     scriptToPrompt?.let { script ->
         ScriptRuntimePromptDialog(
             script = script,

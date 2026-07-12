@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.widget
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

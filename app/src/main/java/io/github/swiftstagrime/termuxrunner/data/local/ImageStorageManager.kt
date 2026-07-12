@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.local
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import android.graphics.Bitmap

@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.adbtrigger
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.os.Build
 import android.os.Bundle

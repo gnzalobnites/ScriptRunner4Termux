@@ -1,8 +1,11 @@
 package io.github.swiftstagrime.termuxrunner.data.local
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.room.TypeConverter
 import io.github.swiftstagrime.termuxrunner.domain.model.AutomationType
 import io.github.swiftstagrime.termuxrunner.domain.model.InteractionMode
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class Converters {

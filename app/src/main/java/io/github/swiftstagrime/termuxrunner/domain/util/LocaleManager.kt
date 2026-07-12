@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.util
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat

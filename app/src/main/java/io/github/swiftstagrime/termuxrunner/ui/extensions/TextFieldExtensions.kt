@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.extensions
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue

@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.di
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import io.github.swiftstagrime.termuxrunner.data.local.KeyManager

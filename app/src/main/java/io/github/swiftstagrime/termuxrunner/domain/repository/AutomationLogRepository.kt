@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.domain.model.AutomationLog
 import kotlinx.coroutines.flow.Flow

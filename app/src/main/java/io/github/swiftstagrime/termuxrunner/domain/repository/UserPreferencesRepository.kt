@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.ui.theme.AppTheme
 import io.github.swiftstagrime.termuxrunner.ui.theme.ThemeMode

@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.di
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory

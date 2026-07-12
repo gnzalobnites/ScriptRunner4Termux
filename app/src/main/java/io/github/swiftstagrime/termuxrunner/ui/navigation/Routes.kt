@@ -1,30 +1,11 @@
 package io.github.swiftstagrime.termuxrunner.ui.navigation
 
-import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.Serializable
-
-@Serializable
-sealed interface Route : NavKey {
-    @Serializable
-    data object Onboarding : Route
-
-    @Serializable
-    data object Home : Route
-
-    @Serializable
-    data object Settings : Route
-
-    @Serializable
-    data class Editor(
-        val scriptId: Int,
-    ) : Route
-
-    @Serializable
-    data object CustomTheme : Route
-
-    @Serializable
-    data object TileSettings : Route
-
-    @Serializable
-    data object Automation : Route
+sealed class Route(val route: String) {
+    data object Onboarding : Route("onboarding")
+    data object Home : Route("home")
+    data class Editor(val scriptId: Int) : Route("editor/$scriptId")
+    data object Settings : Route("settings")
+    data object TileSettings : Route("tile_settings")
+    data object Automation : Route("automation")
+    data object CustomTheme : Route("custom_theme")
 }

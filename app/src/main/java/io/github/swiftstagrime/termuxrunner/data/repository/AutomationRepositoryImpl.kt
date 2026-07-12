@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import io.github.swiftstagrime.termuxrunner.data.automation.AutomationScheduler
 import io.github.swiftstagrime.termuxrunner.data.local.dao.AutomationDao

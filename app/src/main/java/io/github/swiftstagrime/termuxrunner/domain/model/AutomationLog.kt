@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.model
+import androidx.hilt.navigation.compose.hiltViewModel
 
 data class AutomationLog(
     val id: Long = 0,

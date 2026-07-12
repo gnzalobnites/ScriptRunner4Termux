@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.runner
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

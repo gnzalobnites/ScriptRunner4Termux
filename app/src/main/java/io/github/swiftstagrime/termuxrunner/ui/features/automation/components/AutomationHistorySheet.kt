@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.automation.components
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

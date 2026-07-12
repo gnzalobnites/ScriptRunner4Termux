@@ -1,4 +1,9 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.editor
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.pm.PackageManager
 import android.os.Build
@@ -24,11 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.swiftstagrime.termuxrunner.R
 import io.github.swiftstagrime.termuxrunner.domain.util.BatteryUtils
 import io.github.swiftstagrime.termuxrunner.ui.extensions.ObserveAsEvents
@@ -44,17 +44,13 @@ fun EditorRoute(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
     val script by viewModel.currentScript.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
-
     var scriptDraft by rememberSaveable(script?.id) {
         mutableStateOf(script)
     }
-
     val currentPageIndex = viewModel.currentPageIndex
     scriptDraft?.codePages ?: emptyList()
-
     var codeState by rememberSaveable(script?.id, stateSaver = TextFieldValueSaver) {
         mutableStateOf(
             TextFieldValue(
@@ -63,11 +59,9 @@ fun EditorRoute(
             ),
         )
     }
-
     var isBatteryUnrestricted by remember {
         mutableStateOf(BatteryUtils.isIgnoringBatteryOptimizations(context))
     }
-
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -83,7 +77,6 @@ fun EditorRoute(
                 }
             }
         }
-
     val requestNotifications =
         remember {
             {
@@ -93,17 +86,14 @@ fun EditorRoute(
                             context,
                             android.Manifest.permission.POST_NOTIFICATIONS,
                         ) == PackageManager.PERMISSION_GRANTED
-
                     if (!hasPermission) {
                         notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
             }
         }
-
     var previousPageIndex by rememberSaveable { mutableIntStateOf(-1) }
     var previousPageCount by rememberSaveable { mutableIntStateOf(0) }
-
     LaunchedEffect(script) {
         if (scriptDraft == null && script != null) {
             scriptDraft = script
@@ -113,7 +103,6 @@ fun EditorRoute(
             previousPageCount = script!!.codePages.size
         }
     }
-
     LaunchedEffect(script) {
         script?.let { newScript ->
             if (scriptDraft != null) {
@@ -122,7 +111,6 @@ fun EditorRoute(
             }
         }
     }
-
     LaunchedEffect(currentPageIndex) {
         if (currentPageIndex != previousPageIndex) {
             scriptDraft?.let { draft ->
@@ -132,7 +120,6 @@ fun EditorRoute(
             }
         }
     }
-
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
@@ -143,7 +130,6 @@ fun EditorRoute(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-
     ObserveAsEvents(viewModel.uiEvent) { event ->
         when (event) {
             is EditorUiEvent.SaveSuccess -> onBack()
@@ -156,7 +142,6 @@ fun EditorRoute(
             }
         }
     }
-
     if (script == null || scriptDraft == null) {
         Box(
             modifier = Modifier.fillMaxSize(),

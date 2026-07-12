@@ -1,10 +1,10 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.customtheme
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun CustomThemeRoute(
@@ -12,7 +12,6 @@ fun CustomThemeRoute(
     viewModel: CustomThemeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
     val actions =
         remember(viewModel, onBack) {
             CustomThemeActions(
@@ -30,7 +29,6 @@ fun CustomThemeRoute(
                 onToggleDarkMode = viewModel::toggleDarkMode,
             )
         }
-
     CustomThemeScreen(
         state = state,
         actions = actions,

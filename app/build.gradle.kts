@@ -1,5 +1,9 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -13,36 +17,25 @@ plugins {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-    }
-}
-kotlin {
-    jvmToolchain(21)
-}
+
 android {
     namespace = "io.github.swiftstagrime.termuxrunner"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.swiftstagrime.termuxrunner"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 172
         versionName = "1.7.2"
 
         testInstrumentationRunner = "io.github.swiftstagrime.termuxrunner.di.HiltTestRunner"
     }
 
-    // testBuildType = "instrumented"
-    // testBuildType = "benchmark"
-
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            // isProfileable = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -77,11 +70,8 @@ android {
     splits {
         abi {
             isEnable = true
-
             reset()
-
             include("arm64-v8a", "armeabi-v7a", "x86_64")
-
             isUniversalApk = true
         }
     }
@@ -107,6 +97,19 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+
+    // Configuración de compatibilidad Java
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Configuración de Kotlin usando tasks (compatible con AGP 8.7.2)
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
@@ -140,6 +143,11 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
 }
 
 dependencies {
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -181,10 +189,10 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.navigation3.ui)
-    implementation(libs.androidx.navigation3.runtime)
-    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation(libs.androidx.material3.adaptive.navigation3)
+    // // implementation(libs.androidx.navigation3.ui) -- REEMPLAZADO
+    // // implementation(libs.androidx.navigation3.runtime) -- REEMPLAZADO
+    // // implementation(libs.androidx.lifecycle.viewmodel.navigation3) -- REEMPLAZADO
+    // // implementation(libs.androidx.material3.adaptive.navigation3) -- REEMPLAZADO
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.androidx.core.splashscreen)
     testImplementation(libs.kotlin.reflect)
@@ -199,7 +207,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     androidTestImplementation(libs.androidx.work.testing)
     testImplementation(libs.robolectric)
     implementation(libs.androidx.glance.material3)

@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.domain.usecase
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.util.Base64
 import io.github.swiftstagrime.termuxrunner.di.PackageName
@@ -148,7 +149,7 @@ except:
 
       # Close fd 3 to signal Python that we finished normally
       exec 3>&-
-      wait ${dollar}PYTHON_PID 2>/dev/null
+      wait \processId 2>/dev/null
     )
                 """.trimIndent()
         }
@@ -184,7 +185,7 @@ except:
                 .append("\"")
                 .apply {
                     if (script.keepSessionOpen) {
-                        append($$"; echo; echo '--- Finished (Press Enter) ---'; read; exec $SHELL")
+                        append("; echo; echo '--- Finished (Press Enter) ---'; read; exec sh")
                     }
                 }.toString()
         }
@@ -225,7 +226,7 @@ except:
                 .append("\"")
                 .apply {
                     if (script.keepSessionOpen) {
-                        append($$"; echo; echo '--- Finished (Press Enter) ---'; read; exec $SHELL")
+                        append("; echo; echo '--- Finished (Press Enter) ---'; read; exec sh")
                     }
                 }.toString()
         }
@@ -241,28 +242,28 @@ except:
             val finishedAction = "$packageName.SCRIPT_FINISHED"
             val intervalSeconds = (intervalMs / 1000).coerceAtLeast(5)
 
-            return $$"""
+            return """
     (
       (
         while true; do
           # ADDED: --ei script_id to identify which script is pulsing
-          am broadcast -a $$heartbeatAction --ei script_id $$scriptId > /dev/null 2>&1
-          sleep $$intervalSeconds
+          am broadcast -a $heartbeatAction --ei script_id $scriptId > /dev/null 2>&1
+          sleep $intervalSeconds
         done
       ) &
       HEARTBEAT_PID=$!
       
       cleanup_heartbeat() {
-        kill $HEARTBEAT_PID > /dev/null 2>&1
+        kill ${'$'}HEARTBEAT_PID > /dev/null 2>&1
       }
       trap cleanup_heartbeat EXIT
       
-      ( $$commandToRun )
+      ( $commandToRun )
       EXIT_CODE=$?
       
       cleanup_heartbeat
       # ADDED: --ei script_id here as well so the service knows which one finished
-      am broadcast -a $$finishedAction --ei exit_code $EXIT_CODE --ei script_id $$scriptId > /dev/null 2>&1
+      am broadcast -a $finishedAction --ei exit_code ${'$'}EXIT_CODE --ei script_id $scriptId > /dev/null 2>&1
     )
                 """.trimIndent()
         }

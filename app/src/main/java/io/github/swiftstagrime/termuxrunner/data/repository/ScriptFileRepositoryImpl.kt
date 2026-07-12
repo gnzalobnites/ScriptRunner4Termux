@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.repository
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import android.os.Environment

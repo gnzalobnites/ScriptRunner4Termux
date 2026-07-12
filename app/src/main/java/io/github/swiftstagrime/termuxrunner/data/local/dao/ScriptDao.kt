@@ -1,4 +1,5 @@
 package io.github.swiftstagrime.termuxrunner.data.local.dao
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.room.Dao
 import androidx.room.Delete
