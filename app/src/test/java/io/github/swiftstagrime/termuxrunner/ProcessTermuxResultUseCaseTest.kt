@@ -1,8 +1,10 @@
 package io.github.swiftstagrime.termuxrunner
 
 import io.github.swiftstagrime.termuxrunner.data.automation.AutomationNotificationHelper
+import io.github.swiftstagrime.termuxrunner.data.event.ScriptResultEventBus
 import io.github.swiftstagrime.termuxrunner.data.local.dao.AutomationDao
 import io.github.swiftstagrime.termuxrunner.domain.repository.AutomationLogRepository
+import io.github.swiftstagrime.termuxrunner.domain.repository.UserPreferencesRepository
 import io.github.swiftstagrime.termuxrunner.domain.usecase.ProcessTermuxResultUseCase
 import io.github.swiftstagrime.termuxrunner.ui.utils.WidgetManager
 import io.mockk.coVerify
@@ -16,10 +18,13 @@ class ProcessTermuxResultUseCaseTest {
     private val repo = mockk<AutomationLogRepository>(relaxed = true)
     private val notifier = mockk<AutomationNotificationHelper>(relaxed = true)
     private val widgetManager = mockk<WidgetManager>(relaxed = true)
-    private val useCase = ProcessTermuxResultUseCase(dao, repo, notifier, widgetManager)
+    private val resultEventBus = mockk<ScriptResultEventBus>(relaxed = true)
+    private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
+    private val useCase =
+        ProcessTermuxResultUseCase(dao, repo, notifier, widgetManager, resultEventBus, userPreferencesRepository)
 
     @Test
-    fun `execute updates db and shows notification`() =
+    fun `execute updates db, shows notification and emits result`() =
         runTest {
             useCase.execute(
                 automationId = 1,
@@ -32,6 +37,8 @@ class ProcessTermuxResultUseCaseTest {
             coVerify { dao.updateLastResult(1, 0, any()) }
             coVerify { repo.insertLog(match { it.automationId == 1 && it.exitCode == 0 }) }
             verify { notifier.showResultNotification(10, "Test", 0, null) }
+            coVerify { resultEventBus.emit(match { it.scriptId == 10 && it.exitCode == 0 }) }
+            coVerify { userPreferencesRepository.setPendingScriptResult(match { it.scriptId == 10 && it.exitCode == 0 }) }
         }
 
     @Test

@@ -1,10 +1,10 @@
 package io.github.swiftstagrime.termuxrunner.ui
-import androidx.hilt.navigation.compose.hiltViewModel
-// // import androidx.navigation.String
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.swiftstagrime.termuxrunner.data.event.ScriptResultEventBus
+import io.github.swiftstagrime.termuxrunner.domain.model.ScriptExecutionResult
 import io.github.swiftstagrime.termuxrunner.domain.repository.CustomThemeRepository
 import io.github.swiftstagrime.termuxrunner.domain.repository.UserPreferencesRepository
 import io.github.swiftstagrime.termuxrunner.ui.navigation.Route
@@ -27,12 +27,18 @@ class MainViewModel
     constructor(
         private val userPreferencesRepository: UserPreferencesRepository,
         private val customThemeRepository: CustomThemeRepository,
+        private val scriptResultEventBus: ScriptResultEventBus,
     ) : ViewModel() {
         private val _isReady = MutableStateFlow(false)
         val isReady = _isReady.asStateFlow()
 
         private val _backStack = mutableListOf<String>()
         val backStack = MutableStateFlow<List<String>>(emptyList())
+
+        // Resultado de la última ejecución de script pendiente de mostrar
+        // en la ventana emergente (null = no hay nada que mostrar).
+        private val _scriptResult = MutableStateFlow<ScriptExecutionResult?>(null)
+        val scriptResult = _scriptResult.asStateFlow()
 
         val selectedAccent =
             userPreferencesRepository.selectedAccent
@@ -62,6 +68,32 @@ class MainViewModel
                     }
                     _isReady.value = true
                 }
+            }
+
+            // Al abrir la app, primero revisamos si quedó un resultado
+            // pendiente de mostrar (persistido en disco), por si el script
+            // terminó mientras la app estaba cerrada o en background.
+            viewModelScope.launch {
+                userPreferencesRepository.pendingScriptResult.take(1).collect { pending ->
+                    if (pending != null) {
+                        _scriptResult.value = pending
+                    }
+                }
+            }
+
+            // Mientras la app siga abierta, seguimos escuchando resultados
+            // en vivo por el bus en memoria.
+            viewModelScope.launch {
+                scriptResultEventBus.events.collect { result ->
+                    _scriptResult.value = result
+                }
+            }
+        }
+
+        fun dismissScriptResult() {
+            _scriptResult.value = null
+            viewModelScope.launch {
+                userPreferencesRepository.setPendingScriptResult(null)
             }
         }
 

@@ -10,11 +10,13 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.swiftstagrime.termuxrunner.domain.model.ScriptExecutionResult
 import io.github.swiftstagrime.termuxrunner.domain.repository.UserPreferencesRepository
 import io.github.swiftstagrime.termuxrunner.ui.theme.AppTheme
 import io.github.swiftstagrime.termuxrunner.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 import javax.inject.Inject
 
 /**
@@ -31,6 +33,7 @@ class UserPreferencesRepositoryImpl
             val THEME_MODE = stringPreferencesKey("theme_mode")
             val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
             val SELECTED_CUSTOM_THEME_ID = intPreferencesKey("selected_custom_theme_id")
+            val PENDING_SCRIPT_RESULT = stringPreferencesKey("pending_script_result")
         }
 
         override val selectedAccent: Flow<AppTheme> =
@@ -89,6 +92,51 @@ class UserPreferencesRepositoryImpl
         override suspend fun setCustomThemeId(id: Int) {
             context.dataStore.edit { it[Keys.SELECTED_CUSTOM_THEME_ID] = id }
         }
+
+        // Último resultado de ejecución pendiente de mostrar en el popup.
+        // Se persiste en disco (no solo en memoria) para que sobreviva aunque
+        // la app esté cerrada o el proceso muera entre que Termux devuelve
+        // el resultado y el usuario vuelve a abrir la app.
+        override val pendingScriptResult: Flow<ScriptExecutionResult?> =
+            context.dataStore.data
+                .map { prefs -> prefs[Keys.PENDING_SCRIPT_RESULT]?.let { decodeScriptResult(it) } }
+
+        override suspend fun setPendingScriptResult(result: ScriptExecutionResult?) {
+            context.dataStore.edit { prefs ->
+                if (result == null) {
+                    prefs.remove(Keys.PENDING_SCRIPT_RESULT)
+                } else {
+                    prefs[Keys.PENDING_SCRIPT_RESULT] = encodeScriptResult(result)
+                }
+            }
+        }
+
+        private fun encodeScriptResult(result: ScriptExecutionResult): String =
+            JSONObject().apply {
+                put("scriptId", result.scriptId)
+                put("scriptName", result.scriptName)
+                put("exitCode", result.exitCode)
+                put("stdout", result.stdout)
+                put("stderr", result.stderr)
+                put("internalError", result.internalError)
+                put("automationId", result.automationId)
+            }.toString()
+
+        private fun decodeScriptResult(raw: String): ScriptExecutionResult? =
+            try {
+                val json = JSONObject(raw)
+                ScriptExecutionResult(
+                    scriptId = json.getInt("scriptId"),
+                    scriptName = json.getString("scriptName"),
+                    exitCode = json.getInt("exitCode"),
+                    stdout = json.optString("stdout"),
+                    stderr = json.optString("stderr"),
+                    internalError = if (json.isNull("internalError")) null else json.optString("internalError"),
+                    automationId = json.optInt("automationId", -1),
+                )
+            } catch (e: Exception) {
+                null
+            }
     }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_settings")

@@ -13,8 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.semantics
@@ -23,10 +21,9 @@ import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.swiftstagrime.termuxrunner.ui.navigation.Route
+import io.github.swiftstagrime.termuxrunner.ui.components.ScriptResultDialog
 import io.github.swiftstagrime.termuxrunner.ui.navigation.ScriptRunnerEntryProvider
 import io.github.swiftstagrime.termuxrunner.ui.theme.ScriptRunnerForTermuxTheme
 
@@ -50,7 +47,8 @@ class MainActivity : AppCompatActivity() {
             val accent by mainViewModel.selectedAccent.collectAsStateWithLifecycle()
             val mode by mainViewModel.selectedMode.collectAsStateWithLifecycle()
             val customTheme by mainViewModel.customTheme.collectAsStateWithLifecycle()
-            
+            val scriptResult by mainViewModel.scriptResult.collectAsStateWithLifecycle()
+
             CompositionLocalProvider(
                 LocalInspectionMode provides false,
             ) {
@@ -65,7 +63,17 @@ class MainActivity : AppCompatActivity() {
                         val navController = rememberNavController()
                         ScriptRunnerEntryProvider(
                             mainViewModel = mainViewModel,
-                            navController = navController
+                            navController = navController,
+                        )
+                    }
+
+                    // Popup de resultado de ejecución, superpuesto sobre
+                    // cualquier pantalla en la que esté el usuario, igual
+                    // que el popup de resultado de MiX Explorer.
+                    scriptResult?.let { result ->
+                        ScriptResultDialog(
+                            result = result,
+                            onDismiss = { mainViewModel.dismissScriptResult() },
                         )
                     }
                 }
