@@ -1,5 +1,4 @@
 package io.github.swiftstagrime.termuxrunner.data.repository
-import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -32,6 +31,7 @@ class UserPreferencesRepositoryImpl
             val THEME_ACCENT = stringPreferencesKey("theme_accent")
             val THEME_MODE = stringPreferencesKey("theme_mode")
             val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+            val ONBOARDING_SEEN = booleanPreferencesKey("onboarding_seen")
             val SELECTED_CUSTOM_THEME_ID = intPreferencesKey("selected_custom_theme_id")
             val PENDING_SCRIPT_RESULT = stringPreferencesKey("pending_script_result")
         }
@@ -65,8 +65,16 @@ class UserPreferencesRepositoryImpl
             context.dataStore.data
                 .map { preferences -> preferences[Keys.ONBOARDING_COMPLETED] ?: false }
 
+        override val hasSeenOnboarding: Flow<Boolean> =
+            context.dataStore.data
+                .map { preferences -> preferences[Keys.ONBOARDING_SEEN] ?: false }
+
         override suspend fun setOnboardingCompleted(completed: Boolean) {
             context.dataStore.edit { it[Keys.ONBOARDING_COMPLETED] = completed }
+        }
+
+        override suspend fun setOnboardingSeen(seen: Boolean) {
+            context.dataStore.edit { it[Keys.ONBOARDING_SEEN] = seen }
         }
 
         private fun getTileKey(index: Int) = intPreferencesKey("qs_tile_${index}_script_id")

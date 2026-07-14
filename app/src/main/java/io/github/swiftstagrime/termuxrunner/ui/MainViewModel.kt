@@ -32,6 +32,9 @@ class MainViewModel
         private val _isReady = MutableStateFlow(false)
         val isReady = _isReady.asStateFlow()
 
+        private val _startDestination = MutableStateFlow<String?>(null)
+        val startDestination = _startDestination.asStateFlow()
+
         private val _backStack = mutableListOf<String>()
         val backStack = MutableStateFlow<List<String>>(emptyList())
 
@@ -62,8 +65,9 @@ class MainViewModel
         init {
             viewModelScope.launch {
                 userPreferencesRepository.hasCompletedOnboarding.take(1).collect { completed ->
+                    val start = if (completed) Route.Home else Route.Onboarding
+                    _startDestination.value = start.route
                     if (_backStack.isEmpty()) {
-                        val start = if (completed) Route.Home else Route.Onboarding
                         setRoot(start)
                     }
                     _isReady.value = true

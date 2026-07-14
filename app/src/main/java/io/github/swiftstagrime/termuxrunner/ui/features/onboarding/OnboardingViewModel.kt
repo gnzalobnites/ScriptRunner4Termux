@@ -1,5 +1,4 @@
 package io.github.swiftstagrime.termuxrunner.ui.features.onboarding
-import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,9 +51,26 @@ class OnboardingViewModel
             termuxRepository.requestTermuxOverlay()
         }
 
+        // ✅ Marcar onboarding como visto (se llama al abrir la pantalla)
+        fun markOnboardingSeen() {
+            viewModelScope.launch(ioDispatcher) {
+                userPreferencesRepository.setOnboardingSeen(true)
+                _uiState.update { it.copy(isOnboardingCompleted = true) }
+            }
+        }
+
+        // ✅ Marcar como completado (se llama al llegar a la última página)
+        fun markOnboardingCompleted() {
+            viewModelScope.launch(ioDispatcher) {
+                userPreferencesRepository.setOnboardingSeen(true)
+                _uiState.update { it.copy(isOnboardingCompleted = true) }
+            }
+        }
+
         fun completeOnboarding(onFinished: () -> Unit) {
             viewModelScope.launch(ioDispatcher) {
                 userPreferencesRepository.setOnboardingCompleted(true)
+                userPreferencesRepository.setOnboardingSeen(true)
                 withContext(Dispatchers.Main) {
                     onFinished()
                 }
