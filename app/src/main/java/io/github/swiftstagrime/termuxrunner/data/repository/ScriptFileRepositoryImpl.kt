@@ -4,6 +4,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.swiftstagrime.termuxrunner.R
@@ -51,7 +52,11 @@ class ScriptFileRepositoryImpl
                     stream.bufferedReader().readText()
                 } ?: throw IOException(context.getString(R.string.error_read_shared_file))
 
-            return SharedScriptFile(fileName = displayName, content = content)
+            return SharedScriptFile(
+                fileName = displayName,
+                content = content,
+                realPath = resolveRealPath(uri),
+            )
         }
 
         private fun queryDisplayName(uri: Uri): String? =
@@ -62,5 +67,58 @@ class ScriptFileRepositoryImpl
                 } else {
                     null
                 }
+            }
+
+        /**
+         * Intenta resolver la ruta absoluta real en disco del Uri compartido,
+         * para poder ejecutar el archivo original en lugar de copiar su
+         * contenido. Devuelve null si el proveedor no expone una ruta real
+         * (ej. Google Drive, adjuntos de apps de chat) o si el archivo
+         * resuelto no existe.
+         */
+        private fun resolveRealPath(uri: Uri): String? =
+            try {
+                val candidate =
+                    when {
+                        uri.scheme == "file" -> uri.path
+
+                        DocumentsContract.isDocumentUri(context, uri) &&
+                            uri.authority == "com.android.externalstorage.documents" -> {
+                            val docId = DocumentsContract.getDocumentId(uri)
+                            val parts = docId.split(":", limit = 2)
+                            if (parts.size == 2) {
+                                val (volumeId, relativePath) = parts
+                                val root =
+                                    if (volumeId.equals("primary", ignoreCase = true)) {
+                                        Environment.getExternalStorageDirectory().absolutePath
+                                    } else {
+                                        "/storage/$volumeId"
+                                    }
+                                "$root/$relativePath"
+                            } else {
+                                null
+                            }
+                        }
+
+                        else -> queryDataColumn(uri)
+                    }
+
+                candidate?.takeIf { File(it).exists() }
+            } catch (_: Exception) {
+                null
+            }
+
+        private fun queryDataColumn(uri: Uri): String? =
+            try {
+                context.contentResolver.query(uri, arrayOf("_data"), null, null, null)?.use { cursor ->
+                    val dataIndex = cursor.getColumnIndex("_data")
+                    if (dataIndex >= 0 && cursor.moveToFirst()) {
+                        cursor.getString(dataIndex)
+                    } else {
+                        null
+                    }
+                }
+            } catch (_: Exception) {
+                null
             }
     }

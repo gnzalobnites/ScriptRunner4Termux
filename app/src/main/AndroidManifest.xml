@@ -222,6 +222,8 @@
                  <data android:mimeType="text/x-sh" />
                  <data android:mimeType="application/x-sh" />
                  <data android:mimeType="text/plain" />
+                 <data android:mimeType="text/x-python" />
+                 <data android:mimeType="application/x-python-code" />
             </intent-filter>
         </activity>
 

@@ -11,6 +11,7 @@ import io.github.swiftstagrime.termuxrunner.di.IoDispatcher
 import io.github.swiftstagrime.termuxrunner.domain.model.Script
 import io.github.swiftstagrime.termuxrunner.domain.repository.CustomThemeRepository
 import io.github.swiftstagrime.termuxrunner.domain.repository.ScriptFileRepository
+import io.github.swiftstagrime.termuxrunner.domain.repository.TermuxRepository
 import io.github.swiftstagrime.termuxrunner.domain.repository.UserPreferencesRepository
 import io.github.swiftstagrime.termuxrunner.domain.usecase.RunScriptUseCase
 import io.github.swiftstagrime.termuxrunner.ui.theme.AppTheme
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import java.io.File
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,6 +36,7 @@ class ShareScriptViewModel
     constructor(
         private val scriptFileRepository: ScriptFileRepository,
         private val runScriptUseCase: RunScriptUseCase,
+        private val termuxRepository: TermuxRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
         private val customThemeRepository: CustomThemeRepository,
         savedStateHandle: SavedStateHandle,
@@ -67,6 +70,7 @@ class ShareScriptViewModel
         val events = _events.receiveAsFlow()
 
         private var scriptAwaitingPermission: Script? = null
+        private var pendingRealPath: String? = null
 
         init {
             val uri = sharedUri
@@ -81,11 +85,20 @@ class ShareScriptViewModel
             viewModelScope.launch(ioDispatcher) {
                 try {
                     val sharedFile = scriptFileRepository.readSharedFile(uri)
+                    pendingRealPath = sharedFile.realPath
+
+                    val extension = sharedFile.fileName.substringAfterLast('.', "sh").lowercase()
+                    val interpreter = INTERPRETER_MAP[extension] ?: "bash"
+
                     _pendingScript.value =
                         Script.fromCode(
                             code = sharedFile.content,
                             name = sharedFile.fileName,
                             id = SHARED_SCRIPT_ID,
+                            interpreter = interpreter,
+                            fileExtension = extension,
+                            runInBackground = true,
+                            notifyOnResult = true,
                         )
                 } catch (e: Exception) {
                     sendEvent(ShareScriptEvent.ShowError("Error: ${e.message}"))
@@ -97,7 +110,7 @@ class ShareScriptViewModel
         fun confirmExecution() {
             val script = _pendingScript.value ?: return
             _pendingScript.value = null
-            executeScript(script)
+            executeScript(script, pendingRealPath)
         }
 
         fun cancel() {
@@ -105,13 +118,33 @@ class ShareScriptViewModel
             sendEvent(ShareScriptEvent.Finish)
         }
 
-        private fun executeScript(script: Script) {
+        private fun executeScript(
+            script: Script,
+            realPath: String?,
+        ) {
             viewModelScope.launch(ioDispatcher) {
                 try {
-                    runScriptUseCase(script = script)
+                    if (realPath != null) {
+                        // Ejecuta el archivo directamente desde su ubicación real,
+                        // sin copiarlo ni re-codificarlo.
+                        termuxRepository.runCommand(
+                            command = buildDirectPathCommand(script.interpreter, realPath),
+                            runInBackground = script.runInBackground,
+                            sessionAction = "1",
+                            scriptId = SHARED_SCRIPT_ID,
+                            scriptName = script.name,
+                            notifyOnResult = true,
+                        )
+                    } else {
+                        // No se pudo resolver una ruta real (ej. proveedor de nube,
+                        // adjunto de chat): usamos el método anterior, que copia
+                        // el contenido y lo ejecuta.
+                        runScriptUseCase(script = script)
+                    }
                     sendEvent(ShareScriptEvent.Finish)
                 } catch (_: TermuxPermissionException) {
                     scriptAwaitingPermission = script
+                    pendingRealPath = realPath
                     sendEvent(ShareScriptEvent.RequestPermission)
                 } catch (e: Exception) {
                     sendEvent(ShareScriptEvent.ShowError("Error: ${e.message}"))
@@ -120,9 +153,29 @@ class ShareScriptViewModel
             }
         }
 
+        private fun buildDirectPathCommand(
+            interpreter: String,
+            realPath: String,
+        ): String {
+            val escapedPath = shellEscape(realPath)
+            val parentDir = File(realPath).parent
+
+            return if (parentDir != null) {
+                // Nos posicionamos en la carpeta del script para que las rutas
+                // relativas dentro de él (ej. "./data.txt") se resuelvan igual
+                // que si se ejecutara localmente desde esa carpeta.
+                val escapedDir = shellEscape(parentDir)
+                "cd '$escapedDir' && $interpreter '$escapedPath'"
+            } else {
+                "$interpreter '$escapedPath'"
+            }
+        }
+
+        private fun shellEscape(value: String): String = value.replace("'", "'\\''")
+
         fun onPermissionGranted() {
             val script = scriptAwaitingPermission ?: return
-            executeScript(script)
+            executeScript(script, pendingRealPath)
         }
 
         fun onPermissionDenied() {
@@ -137,6 +190,16 @@ class ShareScriptViewModel
             // ID reservado para scripts efímeros que llegan por "compartir",
             // no existen en la base de datos.
             const val SHARED_SCRIPT_ID = -2
+
+            // Mismo criterio extensión -> intérprete que usa
+            // ScriptRepositoryImpl al importar un script nuevo.
+            private val INTERPRETER_MAP =
+                mapOf(
+                    "sh" to "bash",
+                    "bash" to "bash",
+                    "py" to "python",
+                    "py3" to "python",
+                )
         }
     }
 
