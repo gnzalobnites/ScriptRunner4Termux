@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -92,6 +93,22 @@ class MainViewModel
                     _scriptResult.value = result
                 }
             }
+        }
+
+        /**
+         * Obtiene el resultado pendiente del repositorio.
+         * Usado por la Activity cuando se abre desde una notificación.
+         */
+        suspend fun getPendingScriptResult(): ScriptExecutionResult? {
+            return userPreferencesRepository.pendingScriptResult.first()
+        }
+
+        /**
+         * Muestra un resultado de script en el popup.
+         * Usado por la Activity cuando se abre desde una notificación.
+         */
+        fun showScriptResult(result: ScriptExecutionResult) {
+            _scriptResult.value = result
         }
 
         fun dismissScriptResult() {

@@ -21,11 +21,13 @@ import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.swiftstagrime.termuxrunner.ui.components.ScriptResultDialog
 import io.github.swiftstagrime.termuxrunner.ui.navigation.ScriptRunnerEntryProvider
 import io.github.swiftstagrime.termuxrunner.ui.theme.ScriptRunnerForTermuxTheme
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -34,6 +36,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Verificar si debemos mostrar el resultado pendiente
+        if (intent?.getBooleanExtra("SHOW_SCRIPT_RESULT", false) == true) {
+            // Limpiamos el extra para que no se procese de nuevo al rotar la pantalla
+            intent.removeExtra("SHOW_SCRIPT_RESULT")
+            // Mostrar el resultado pendiente
+            showPendingScriptResult()
+        }
 
         splashScreen.setKeepOnScreenCondition {
             !mainViewModel.isReady.value
@@ -68,8 +78,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // Popup de resultado de ejecución, superpuesto sobre
-                    // cualquier pantalla en la que esté el usuario, igual
-                    // que el popup de resultado de MiX Explorer.
+                    // cualquier pantalla en la que esté el usuario
                     scriptResult?.let { result ->
                         ScriptResultDialog(
                             result = result,
@@ -77,6 +86,19 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Recupera y muestra el resultado pendiente del script cuando la app se abre
+     * desde una notificación.
+     */
+    private fun showPendingScriptResult() {
+        lifecycleScope.launch {
+            val pendingResult = mainViewModel.getPendingScriptResult()
+            if (pendingResult != null) {
+                mainViewModel.showScriptResult(pendingResult)
             }
         }
     }

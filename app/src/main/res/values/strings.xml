@@ -3,6 +3,11 @@
     <string name="bridge_folder_name" translatable="false">TermuxRunnerBridge</string>
     <string name="language_label">Language</string>
 
+    <string name="run">Run</string>
+    <string name="share_script_confirm_title">Run %1$s?</string>
+    <string name="share_script_confirm_message">This script will be run in Termux. Review the content before continuing:</string>
+    <string name="error_read_shared_file">Could not read the shared file.</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="back_description">Back</string>

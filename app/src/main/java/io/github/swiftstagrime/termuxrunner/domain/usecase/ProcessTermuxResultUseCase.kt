@@ -48,21 +48,15 @@ class ProcessTermuxResultUseCase
                 widgetManager.updateLogsWidget()
             }
 
-            // Notificación de sistema: se conserva siempre, cubre el caso en que
-            // la app esté cerrada o en segundo plano (p. ej. automatizaciones).
             notificationHelper.showResultNotification(
                 scriptId = scriptId,
                 name = scriptName,
                 exitCode = exitCode,
                 internalError = internalError,
+                stdout = stdout,
+                stderr = stderr,
             )
 
-            // El resultado completo (stdout/stderr) se persiste primero en
-            // DataStore, para que sobreviva aunque la app esté cerrada o el
-            // proceso muera antes de que el usuario la vuelva a abrir. Luego
-            // se emite también por el bus en memoria para el caso en que la
-            // app ya esté abierta y quiera reaccionar al instante, igual que
-            // hace MiX Explorer al ejecutar scripts desde su menú.
             val fullResult =
                 ScriptExecutionResult(
                     scriptId = scriptId,

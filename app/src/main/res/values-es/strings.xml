@@ -20,6 +20,11 @@
     <string name="import_success">Importación exitosa</string>
     <string name="import_failed">Error al importar: %1$s</string>
 
+    <string name="run">Ejecutar</string>
+    <string name="share_script_confirm_title">¿Ejecutar %1$s?</string>
+    <string name="share_script_confirm_message">Este script se ejecutará en Termux. Revisa el contenido antes de continuar:</string>
+    <string name="error_read_shared_file">No se pudo leer el archivo compartido.</string>
+
     <!-- Runner -->
     <string name="script_runner_permission_denied">Permiso denegado</string>
 

@@ -1,13 +1,16 @@
 package io.github.swiftstagrime.termuxrunner.data.automation
-import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.swiftstagrime.termuxrunner.R
+import io.github.swiftstagrime.termuxrunner.domain.model.ScriptExecutionResult
+import io.github.swiftstagrime.termuxrunner.ui.components.ScriptResultActivity
 import io.github.swiftstagrime.termuxrunner.ui.extensions.UiText
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +26,8 @@ class AutomationNotificationHelper
             name: String,
             exitCode: Int,
             internalError: String?,
+            stdout: String = "",
+            stderr: String = "",
         ) {
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -57,6 +62,28 @@ class AutomationNotificationHelper
                     else -> UiText.StringResource(R.string.notif_msg_failed_code, exitCode)
                 }.asString(context)
 
+            val result = ScriptExecutionResult(
+                scriptId = scriptId,
+                scriptName = name,
+                exitCode = exitCode,
+                stdout = stdout,
+                stderr = stderr,
+                internalError = internalError,
+                automationId = -1
+            )
+
+            val intent = Intent(context, ScriptResultActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                putExtra(ScriptResultActivity.EXTRA_RESULT, result)
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                scriptId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
             val builder =
                 NotificationCompat
                     .Builder(context, channelId)
@@ -65,6 +92,7 @@ class AutomationNotificationHelper
                     .setContentText(content)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
 
             notificationManager.notify(scriptId, builder.build())
         }
